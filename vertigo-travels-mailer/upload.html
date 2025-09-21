@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">File Upload to AI Service</h1>
+        
+        <!-- File input and upload button -->
+        <div class="mb-6">
+            <label for="fileInput" class="block text-gray-700 font-medium mb-2">Select a file</label>
+            <input type="file" id="fileInput" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <button id="uploadButton" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+            Upload File
+        </button>
+
+        <!-- Message display area -->
+        <div id="messageArea" class="mt-6 p-4 rounded-lg text-center font-medium transition-all duration-300 hidden"></div>
+    </div>
+
+    <script>
+        // Get references to the HTML elements
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const messageArea = document.getElementById('messageArea');
+
+        // The local server URL
+        const url = 'http://localhost:3000/upload';
+
+        uploadButton.addEventListener('click', async () => {
+            // Get the selected file from the input
+            const file = fileInput.files[0];
+
+            // Show an error if no file is selected
+            if (!file) {
+                showMessage('Please select a file first.', 'bg-red-200 text-red-800');
+                return;
+            }
+
+            // Show a loading message
+            showMessage('Uploading file...', 'bg-blue-200 text-blue-800');
+
+            // Create a FormData object and append the file
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                // Perform the fetch request to the local server
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // Check for a successful response (status code 200-299)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || `HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Log the API response and display a success message
+                console.log(data);
+                showMessage('File uploaded successfully! Check the console for the response data.', 'bg-green-200 text-green-800');
+
+            } catch (error) {
+                // Log and display any errors
+                console.error('Upload failed:', error);
+                showMessage(`Upload failed: ${error.message}`, 'bg-red-200 text-red-800');
+            }
+        });
+
+        // Function to display messages in the UI
+        function showMessage(message, className) {
+            messageArea.textContent = message;
+            messageArea.className = `mt-6 p-4 rounded-lg text-center font-medium transition-all duration-300 ${className}`;
+            messageArea.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

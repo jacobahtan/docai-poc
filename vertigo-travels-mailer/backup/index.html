@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vertigo Travels</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f2f5;
+    }
+
+    .ui5-card {
+      background-color: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: transform 0.2s ease-in-out;
+      cursor: pointer;
+    }
+
+    .ui5-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .ui5-button {
+      border-radius: 9999px;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      transition: background-color 0.2s;
+    }
+
+    .ui5-button-primary {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .ui5-button-primary:hover {
+      background-color: #0056b3;
+    }
+
+    .ui5-input {
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+    }
+
+    .ui5-header {
+      background-color: #1a3c5a;
+      color: white;
+    }
+
+    .ui5-header-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .action-button {
+      transition: all 0.2s;
+      transform: scale(1);
+    }
+
+    .action-button:hover {
+      transform: scale(1.05);
+    }
+
+    /* Style for the custom message box */
+    .message-box {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      text-align: center;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    /* Additional styling for the dropdown in the header */
+    .header-dropdown-container {
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      width: 100%;
+      text-align: center;
+    }
+
+    @media (min-width: 768px) {
+      .header-dropdown-container {
+        flex-direction: row;
+        width: auto;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+
+  <!-- Header -->
+  <header class="ui5-header shadow-md p-4">
+    <div class="container flex flex-col md:flex-row md:justify-between items-center space-y-4 md:space-y-0">
+      <h1 class="ui5-header-title text-2xl font-bold">Vertigo Travels</h1>
+      <nav class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2 w-full md:w-auto">
+        <div class="header-dropdown-container space-y-2 md:space-y-0 md:space-x-2">
+          <span class="text-sm text-gray-300">Switch Traveler:</span>
+          <select id="traveler-select" class="ui5-input bg-gray-600 text-white border-none w-full md:w-auto">
+            <!-- Options will be populated by JS -->
+          </select>
+        </div>
+        <button id="nav-courses-btn"
+          class="ui5-button bg-gray-600 text-white hover:bg-gray-500 w-full md:w-auto">Courses</button>
+        <button id="nav-subscriptions-btn"
+          class="ui5-button bg-gray-600 text-white hover:bg-gray-500 w-full md:w-auto">My Subscriptions</button>
+        <div class="relative w-full md:w-auto">
+          <button id="nav-admin-btn"
+            class="ui5-button bg-gray-600 text-white hover:bg-gray-500 w-full md:w-auto">Admin</button>
+          <div id="admin-dropdown"
+            class="absolute hidden bg-white text-gray-800 rounded-md shadow-lg py-2 mt-2 w-full md:w-48 right-0 z-10">
+            <button id="nav-admin-travelers-btn" class="block px-4 py-2 w-full text-left hover:bg-gray-100">Manage
+              Travelers</button>
+            <button id="nav-admin-courses-btn" class="block px-4 py-2 w-full text-left hover:bg-gray-100">Manage
+              Courses</button>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main id="app-container" class="container mt-8">
+    <!-- Content will be dynamically injected here -->
+  </main>
+
+  <!-- Custom Message Box -->
+  <div id="message-overlay" class="overlay hidden"></div>
+  <div id="message-box" class="message-box hidden">
+    <p id="message-text" class="mb-4"></p>
+    <button id="message-ok-btn" class="ui5-button ui5-button-primary">OK</button>
+  </div>
+
+  <script>
+    // Use a simple state object to manage the application's view and data.
+    const state = {
+      currentView: 'coursesCatalog',
+      selectedCourse: null,
+      courses: [],
+      subscriptions: [],
+      travelers: [],
+      adminCourses: [],
+      isAuthenticated: false,
+      accessToken: null,
+      selectedTravelerId: null, // New state variable to hold the selected traveler ID
+      xsuaaTokenEndpoint: null,
+      backendCDSCAPEndpoint: null,
+      s4Endpoint: null
+    };
+
+    /** NODEJS ENVIRONMENT VARIABLE MANAGEMENT */
+    fetch("/environmentvariables") // Call your endpoint
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`); // Handle errors
+        }
+        return response.json(); // Parse the JSON response
+      })
+      .then(data => {
+        const endpoints = data; // Assign the value
+        console.log("Endpoints:", endpoints);
+        state.xsuaaTokenEndpoint = endpoints.XSUAA_AUTH_ENDPOINT; // Store the endpoint in state
+        state.backendCDSCAPEndpoint = endpoints.BACKEND_CDS_ENDPOINT; // Store the endpoint in state
+        state.s4Endpoint = endpoints.S4HANA_ENDPOINT; // Store the endpoint in state
+      })
+      .catch(error => {
+        console.error("Error fetching environment variable:", error);
+      });
+
+    // Custom alert/message box function to replace window.alert
+    function showMessage(message) {
+      const messageBox = document.getElementById('message-box');
+      const messageText = document.getElementById('message-text');
+      const messageOverlay = document.getElementById('message-overlay');
+      const okBtn = document.getElementById('message-ok-btn');
+
+      messageText.textContent = message;
+      messageBox.classList.remove('hidden');
+      messageOverlay.classList.remove('hidden');
+
+      okBtn.onclick = () => {
+        messageBox.classList.add('hidden');
+        messageOverlay.classList.add('hidden');
+      };
+    }
+
+    // --- Mock API Service ---
+    // This service simulates the backend API calls described in the prompt.
+    // In a real application, these would be actual fetch() calls to the server.
+    const mockData = {
+      courses: [
+        { "ID": "1d6f8a9e-87d2-4e4b-9d41-3d712e52b22b", "name": "Sailing Course Level 2", "description": "An intermediate sailing course, requiring prior experience and a medical certificate.", "price": "1250.00", "depositAmount": "250.00", "image": "resources/img/sailing.jpg" },
+        { "ID": "2a4e1f7c-7c8a-4d23-95c5-b82d4f10d9e2", "name": "Diving Expedition", "description": "A week-long diving trip to the Red Sea, requiring an advanced diver license.", "price": "2500.00", "depositAmount": "500.00", "image": "resources/img/diving.jpg" },
+        { "ID": "3c9d7e5f-1a2b-4e67-8b0c-9d1a2b3c4d5e", "name": "Surf Camp", "description": "A beginner surf camp for all ages, no prior experience needed.", "price": "850.00", "depositAmount": "170.00", "image": "resources/img/surfing.jpg" },
+        { "ID": "4b8c7d6e-1f2a-3c4d-5e6f-7a8b9c0d1e2f", "name": "Skiing Adventure", "description": "An advanced skiing package for experienced skiers, including off-piste lessons.", "price": "1800.00", "depositAmount": "360.00", "image": "resources/img/skiing.jpg" },
+        { "ID": "5d7a6e5c-2b1a-4d3f-6e7a-8b9c0d1e2f3a", "name": "Climbing Masterclass", "description": "An intensive climbing course focused on multi-pitch routes.", "price": "1500.00", "depositAmount": "300.00", "image": "resources/img/climbing.jpg" }
+      ],
+      requiredDocuments: {
+        "1d6f8a9e-87d2-4e4b-9d41-3d712e52b22b": [
+          { "documentType": "ID_CARD", "description": "A copy of a valid ID card or passport." },
+          { "documentType": "MEDICAL_CERT", "description": "A valid medical certificate for physical activity." }
+        ],
+        "2a4e1f7c-7c8a-4d23-95c5-b82d4f10d9e2": [
+          { "documentType": "ID_CARD", "description": "A copy of a valid ID card or passport." },
+          { "documentType": "DIVING_CERT_ADV", "description": "Advanced Diver License." }
+        ],
+        "3c9d7e5f-1a2b-4e67-8b0c-9d1a2b3c4d5e": [
+          { "documentType": "ID_CARD", "description": "A copy of a valid ID card or passport." }
+        ],
+        "4b8c7d6e-1f2a-3c4d-5e6f-7a8b9c0d1e2f": [
+          { "documentType": "ID_CARD", "description": "A copy of a valid ID card or passport." },
+          { "documentType": "INSURANCE_DOC", "description": "Travel/Health Insurance Document." }
+        ],
+        "5d7a6e5c-2b1a-4d3f-6e7a-8b9c0d1e2f3a": [
+          { "documentType": "ID_CARD", "description": "A copy of a valid ID card or passport." },
+          { "documentType": "CLIMBING_CERT_L1", "description": "Climbing Level 1 Certificate." }
+        ]
+      },
+      travelers: [
+        { "ID": "2d9b6c4a-3a1e-4b8d-9c5f-6a7b8c9d0e1f", "firstName": "Mary", "lastName": "Travels", "email": "mary.travels@example.com" },
+        { "ID": "3a1e4b8d-9c5f-6a7b-8c9d-0e1f2d9b6c4a", "firstName": "Leo", "lastName": "Travels", "email": "leo.travels@example.com" },
+      ],
+      subscriptions: [
+        { "ID": "0d4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8g", "course_ID": "1d6f8a9e-87d2-4e4b-9d41-3d712e52b22b", "traveler_ID": "2d9b6c4a-3a1e-4b8d-9c5f-6a7b8c9d0e1f", "status": "DocsPending", "s4hanaBusinessPartnerID": null, "s4hanaSalesOrderID": null },
+        { "ID": "7a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d", "course_ID": "2a4e1f7c-7c8a-4d23-95c5-b82d4f10d9e2", "traveler_ID": "2d9b6c4a-3a1e-4b8d-9c5f-6a7b8c9d0e1f", "status": "DepositPending", "s4hanaBusinessPartnerID": null, "s4hanaSalesOrderID": null },
+        { "ID": "9c3d4e5f-6a7b-8c9d-0e1f-2a3b4c5d6e7f", "course_ID": "3c9d7e5f-1a2b-4e67-8b0c-9d1a2b3c4d5e", "traveler_ID": "3a1e4b8d-9c5f-6a7b-8c9d-0e1f2a3b4c5d", "status": "Confirmed", "s4hanaBusinessPartnerID": "BP123456", "s4hanaSalesOrderID": "SO789012" }
+      ],
+      documents: []
+    };
+
+
+
+    // This is a placeholder for the actual API service.
+    // It will simulate API calls using the mockData above.
+
+
+
+    const ApiService = {
+      // Placeholder for token fetching. In a real app, this would be a POST request.
+      async getAccessToken() {
+        try {
+          const url = 'https://sadevmain.authentication.eu10.hana.ondemand.com/oauth/token';
+          const options = {
+            method: 'POST',
+            body: new URLSearchParams({
+              client_id: 'sb-vertigo-travels-cap-sadevmain-dev!t141280',
+              client_secret: '1eab812e-12f4-4ae2-ad6b-f93eb91e171c$ETMTP5sYGkqgvq9et7na4Td8OOwVv_fCwC9p2FzN4gs=',
+              grant_type: 'client_credentials'
+            })
+          };
+
+          try {
+            const response = await fetch(url, options);
+            const data = await response.json();
+            // console.log(data);
+            // console.log(data.access_token);
+            state.accessToken = data.access_token;
+          } catch (error) {
+            console.error(error);
+          }
+
+          // Simulate API call
+          console.log("Simulating token request...");
+          await new Promise(resolve => setTimeout(resolve, 500));
+          // state.accessToken = 'mock_access_token';
+          state.isAuthenticated = true;
+          console.log("Token received:", state.accessToken);
+          console.log("test: " + state.xsuaaTokenEndpoint);
+          return state.accessToken;
+        } catch (error) {
+          console.error("Failed to get access token:", error);
+          showMessage("Failed to authenticate with the API. Please check the console.");
+        }
+      },
+
+      // Simulate GET request for courses
+      async getCourses() {
+        console.log("Simulating GET /traveler/Courses");
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const url = state.backendCDSCAPEndpoint + '/admin/Courses';
+        const token = state.accessToken; // Make sure your token is available here
+
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          console.log("Courses: " + JSON.stringify(data.value));
+          return { value: data.value };
+          // return { value: mockData.courses };
+        } catch (error) {
+          console.error(error);
+        }
+      },
+
+      // Simulate GET request for a specific course's required documents
+      async getRequiredDocuments(courseId) {
+        console.log(`Simulating GET /traveler/Courses(ID='${courseId}')/requiredDocuments`);
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const url = state.backendCDSCAPEndpoint + `/admin/Courses/${courseId}/requiredDocuments`;
+        const token = state.accessToken; // Make sure your token is available here
+
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          console.log("Required Documents: " + JSON.stringify(data.value));
+          // return { value: mockData.requiredDocuments[courseId] || [] };
+          return { value: data.value };
+        } catch (error) {
+          console.error(error);
+        }
+      },
+
+      // Simulate POST request to create a subscription
+      async createSubscription(subscriptionData) {
+        console.log("Simulating POST /traveler/Subscriptions", subscriptionData);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Generate a new ID and add to mock data
+        // const newSubscription = {
+        //   ...subscriptionData,
+        //   ID: crypto.randomUUID(),
+        //   subscriptionDate: new Date().toISOString().split('T')[0]
+        // };
+        // mockData.subscriptions.push(newSubscription);
+        // return newSubscription;
+
+        const url = state.backendCDSCAPEndpoint + `/admin/Subscriptions`;
+        const token = state.accessToken; // Make sure your token is available here
+
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify(subscriptionData)
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          console.log(data);
+          // return { value: mockData.requiredDocuments[courseId] || [] };
+          return { value: data };
+        } catch (error) {
+          console.error(error);
+        }
+
+      },
+
+      async createSubmittedDocumentsBySubscriptionID(subscriptionId, documentsData, requiredDocuments) {
+        console.log(`Posting each document for Subscription ID: ${subscriptionId}`, documentsData);
+
+        const url = state.backendCDSCAPEndpoint + `/admin/SubmittedDocuments`;
+        const token = state.accessToken; // Make sure your token is available here
+
+        const submittedDocumentTypes = new Set(documentsData.map(doc => doc.documentType));
+
+        // Prepare an array of promises for each document POST
+        const postPromises = documentsData.map(doc => {
+          const docPayload = {
+            ...doc,
+            subscription_ID: subscriptionId,
+            status: 'Uploaded'
+          };
+          return fetch(url, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(docPayload)
+          })
+            .then(response => response.json())
+            .catch(error => {
+              console.error('Error posting document:', error);
+              return null;
+            });
+        });
+
+        // Add missing documents by comparing with required documents
+        requiredDocuments.forEach(requiredDoc => {
+          if (!submittedDocumentTypes.has(requiredDoc.documentType)) {
+            const docPayload = {
+              documentType: requiredDoc.documentType,
+              fileName: null,
+              mimeType: null,
+              subscription_ID: subscriptionId,
+              status: 'Missing'
+            };
+            return fetch(url, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(docPayload)
+            })
+              .then(response => response.json())
+              .catch(error => {
+                console.error('Error posting document:', error);
+                return null;
+              });
+          }
+        });
+
+        // console.log("Submitted Documents created:", successfulDocs);
+        // return successfulDocs;
+      },
+
+
+      // Simulate POST request to create a traveler
+      async createTraveler(travelerData) {
+        console.log("Simulating POST /admin/Travelers", travelerData);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Generate a new ID and add to mock data
+        const newTraveler = {
+          ...travelerData,
+          ID: crypto.randomUUID()
+        };
+        mockData.travelers.push(newTraveler);
+        return newTraveler;
+      },
+
+      // Simulate GET request for subscriptions
+      async getSubscriptions() {
+        console.log("Simulating GET /traveler/Subscriptions");
+        await new Promise(resolve => setTimeout(resolve, 300));
+        // For this mock, we'll return all subscriptions.
+        // In a real app, this would be filtered by the traveler ID.
+
+        const url = state.backendCDSCAPEndpoint + '/admin/Subscriptions';
+        const token = state.accessToken; // Make sure your token is available here
+
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          console.log("Subscriptions: " + JSON.stringify(data.value));
+          return { value: data.value };
+          // return { value: mockData.subscriptions };
+        } catch (error) {
+          console.error(error);
+        }
+      },
+
+      // Simulate GET request for all travelers (Admin view)
+      async getTravelers() {
+        console.log("Simulating GET /admin/Travelers");
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const url = state.backendCDSCAPEndpoint + '/admin/Travelers';
+        const token = state.accessToken; // Make sure your token is available here
+
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          console.log("Travelers: " + JSON.stringify(data.value));
+          return { value: data.value };
+          // return { value: mockData.travelers };
+        } catch (error) {
+          console.error(error);
+        }
+
+      },
+
+      // Simulate GET request for a specific course's required documents
+      async getTraveler(travelerId) {
+        console.log(`Simulating GET /traveler/Travelers(ID='${travelerId}')`);
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const url = state.backendCDSCAPEndpoint + `/admin/Travelers/${travelerId}`;
+        const token = state.accessToken; // Make sure your token is available here
+
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          console.log("Traveler: " + JSON.stringify(data));
+          // return { value: mockData.requiredDocuments[courseId] || [] };
+          return { value: data };
+        } catch (error) {
+          console.error(error);
+        }
+      },
+
+      // Simulate GET request for all submitted documents (Admin view)
+      async getSubmittedDocuments() {
+        console.log("Simulating GET /admin/SubmittedDocuments");
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const url = state.backendCDSCAPEndpoint + '/admin/SubmittedDocuments';
+        const token = state.accessToken; // Make sure your token is available here
+
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          console.log("SubmittedDocuments: " + JSON.stringify(data.value));
+          return { value: data.value };
+          // return { value: mockData.travelers };
+        } catch (error) {
+          console.error(error);
+        }
+      },
+
+      // Simulate POST request to create a new course (Admin)
+      async createS4BusinessPartner(travelerId) {
+
+        const traveler = await this.getTraveler(travelerId);
+        console.log("Creating S/4HANA Business Partner for traveler: ", traveler);
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const url = state.backendCDSCAPEndpoint + `/s4-api/createNewBusinessPartner`;
+        const token = state.accessToken; // Make sure your token is available here
+
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            "message": {
+              "firstName": traveler.value.firstName,
+              "lastName": traveler.value.lastName,
+              "email": traveler.value.email
+            }
+          })
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          console.log(data);
+          // return { value: mockData.requiredDocuments[courseId] || [] };
+          return { value: data };
+        } catch (error) {
+          console.error(error);
+        }
+
+      },
+
+      /**
+     * Fetches the CSRF token and session cookies from the S/4HANA endpoint.
+     * This is a critical prerequisite for all state-changing API requests.
+     * @returns {Promise<{csrfToken: string, cookies: string} | null>} An object containing the token and cookies, or null if the request fails.
+     */
+      async fetchCsrfToken() {
+        console.log('Fetching CSRF token...');
+        const url = state.s4Endpoint + '/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_BusinessPartner';
+
+        try {
+          const response = await fetch(url, {
+            method: 'GET', // Use a GET request to fetch the token
+            headers: {
+              // This header signals to the server that we need a new token.
+              'x-csrf-token': 'Fetch'
+            }
+          });
+
+          // Check if the response was successful before trying to read headers.
+          if (!response.ok) {
+            throw new Error(`Failed to fetch CSRF token. Status: ${response.status}`);
+          }
+
+          console.log(response);
+
+          // The CSRF token is returned in the response headers.
+          const csrfToken = response.headers.get('x-csrf-token');
+
+          // The cookies are returned in the Set-Cookie header. We need to parse them.
+          // Note: The browser will automatically handle the 'Set-Cookie' header,
+          // so we don't strictly need to read it and pass it manually in the code.
+          // However, a good practice is to be aware of its existence.
+          const cookies = response.headers.get('Set-Cookie');
+
+          if (!csrfToken) {
+            throw new Error('CSRF token was not found in the response headers.');
+          }
+
+          console.log('Successfully fetched CSRF token:', csrfToken);
+          return { csrfToken: csrfToken, cookies: cookies };
+
+        } catch (error) {
+          console.error('Error fetching CSRF token:', error);
+          return null; // Return null on failure
+        }
+      },
+
+
+      // Simulate a PATCH request to update a subscription status
+      async updateSubscriptionStatus(subscriptionId, status, s4hanaBPID = null, s4hanaSOID = null) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // const subscription = mockData.subscriptions.find(s => s.ID === subscriptionId);
+        // if (subscription) {
+        //   subscription.status = status;
+        //   if (s4hanaBPID) subscription.s4hanaBusinessPartnerID = s4hanaBPID;
+        //   if (s4hanaSOID) subscription.s4hanaSalesOrderID = s4hanaSOID;
+        //   return true;
+        // }
+        // return false;
+
+        console.log(`Simulating PATCH /admin/Subscriptions/${subscriptionId}`, { status, s4hanaBusinessPartnerID: s4hanaBPID, s4hanaSalesOrderID: s4hanaSOID });
+        const url = state.backendCDSCAPEndpoint + `/admin/Subscriptions/${subscriptionId}`;
+        const token = state.accessToken; // Make sure your token is available here
+
+        const options = {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            "status": status,
+            "s4hanaBusinessPartnerID": s4hanaBPID,
+            "s4hanaSalesOrderID": s4hanaSOID
+          })
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          console.log(data);
+          // return { value: mockData.requiredDocuments[courseId] || [] };
+          return { value: data };
+        } catch (error) {
+          console.error(error);
+        }
+      },
+
+      // Simulate a PATCH request to update a submitted document status
+      async updateDocumentStatus(docId, status) {
+        console.log(`Simulating PATCH /admin/SubmittedDocuments/${docId}`, { status });
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const document = mockData.documents.find(d => d.ID === docId);
+        if (document) {
+          document.status = status;
+          return true;
+        }
+        return false;
+      },
+
+      // Simulate POST request to create a new course (Admin)
+      async createCourse(courseData) {
+        console.log("Simulating POST /admin/Courses", courseData);
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const url = state.backendCDSCAPEndpoint + `/admin/Courses`;
+        const token = state.accessToken; // Make sure your token is available here
+
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify(courseData)
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const data = await response.json();
+          console.log(data);
+          // return { value: mockData.requiredDocuments[courseId] || [] };
+          return { value: data };
+        } catch (error) {
+          console.error(error);
+        }
+
+      }
+    };
+
+    // --- View Rendering Functions ---
+
+    /**
+     * Renders the main course catalog page.
+     */
+    async function renderCoursesCatalog() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+                <div class="flex flex-col md:flex-row items-center mb-6 space-y-4 md:space-y-0 md:space-x-4">
+                    <h2 class="text-3xl font-bold text-gray-900">Courses Catalog</h2>
+                </div>
+                <div id="course-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <p class="text-gray-500">Loading courses...</p>
+                </div>
+            `;
+
+      const coursesData = await ApiService.getCourses();
+      const courseList = document.getElementById('course-list');
+
+      if (coursesData.value.length > 0) {
+        courseList.innerHTML = coursesData.value.map(course => `
+                    <div class="ui5-card p-4 flex flex-col items-center text-center">
+                        <img src="${course.image}" alt="${course.name}" class="rounded-lg mb-4 w-full h-48 object-cover">
+                        <h3 class="text-xl font-semibold mb-2">${course.name}</h3>
+                        <p class="text-gray-600 mb-4">${course.description}</p>
+                        <span class="text-lg font-bold text-gray-900 mb-4">$${course.price}</span>
+                        <button data-course-id="${course.ID}" class="ui5-button ui5-button-primary w-full view-course-btn">View Details</button>
+                    </div>
+                `).join('');
+      } else {
+        courseList.innerHTML = '<p class="text-gray-500 text-center col-span-full">No courses available at the moment.</p>';
+      }
+
+      // Add event listeners for each "View Details" button
+      document.querySelectorAll('.view-course-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const courseId = e.target.getAttribute('data-course-id');
+          state.selectedCourse = coursesData.value.find(c => c.ID === courseId);
+          renderCourseDetail();
+        });
+      });
+    }
+
+    /**
+     * Renders the course detail page for a specific course.
+     */
+    async function renderCourseDetail() {
+      if (!state.selectedCourse) {
+        renderCoursesCatalog();
+        return;
+      }
+
+      // Temporarily store uploaded documents until the subscription is created
+      const stagedDocuments = [];
+
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+                <h2 class="text-3xl font-bold text-gray-900 mb-8">Course Details: ${state.selectedCourse.name}</h2>
+                <div class="flex flex-col lg:flex-row lg:space-x-8">
+                    <!-- Left Side: Course Info -->
+                    <div class="w-full lg:w-1/2 ui5-card p-6 mb-8 lg:mb-0">
+                        <img src="${state.selectedCourse.image}" alt="${state.selectedCourse.name}" class="rounded-lg mb-4 w-full h-auto object-cover">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">${state.selectedCourse.name}</h3>
+                        <p class="text-gray-600 mb-4">${state.selectedCourse.description}</p>
+                        <ul class="space-y-2 text-lg">
+                            <li><span class="font-semibold">Price:</span> $${state.selectedCourse.price}</li>
+                            <li><span class="font-semibold">Required Deposit:</span> $${state.selectedCourse.depositAmount} (50%)</li>
+                        </ul>
+                    </div>
+
+                    <!-- Right Side: Subscription Form & Documents -->
+                    <div class="w-full lg:w-1/2 ui5-card p-6">
+                        <h3 class="text-2xl font-bold mb-4">Finalize your Subscription</h3>
+                        
+                        <!-- Required Documents Section -->
+                        <div id="required-documents-section" class="mb-6">
+                            <h4 class="text-xl font-semibold mb-2">Required Documents</h4>
+                            <p class="text-gray-600 mb-4">Please upload the following documents to complete your subscription request.</p>
+                            <ul id="document-list" class="list-disc list-inside space-y-2 text-gray-700">
+                                <!-- Documents will be injected here -->
+                            </ul>
+                            <div id="staged-docs-preview" class="mt-4">
+                                <h5 class="font-bold">Staged Documents:</h5>
+                                <ul id="staged-docs-list" class="list-disc list-inside text-sm">
+                                    <li class="text-gray-500">No documents staged yet.</li>
+                            </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Upload Form -->
+                        <div class="space-y-4">
+                            <h4 class="text-xl font-semibold mb-2">Upload Documents</h4>
+                            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                                <select id="document-type-select" class="ui5-input flex-grow"></select>
+                                <input type="file" id="document-upload" class="ui5-input flex-grow">
+                            </div>
+                            <button id="submit-document-btn" class="ui5-button ui5-button-primary w-full">Stage Document</button>
+                        </div>
+
+                        <!-- Subscription Submit Button -->
+                        <button id="subscribe-btn" class="ui5-button ui5-button-primary mt-6 w-full">Submit Subscription Request</button>
+                    </div>
+                </div>
+            `;
+
+      // Fetch and display required documents
+      const docsData = await ApiService.getRequiredDocuments(state.selectedCourse.ID);
+      const docList = document.getElementById('document-list');
+      const docTypeSelect = document.getElementById('document-type-select');
+      const stagedDocsList = document.getElementById('staged-docs-list');
+
+      if (docsData.value.length > 0) {
+        docList.innerHTML = docsData.value.map(doc => `
+                    <li>${doc.description} (${doc.documentType})</li>
+                `).join('');
+        // Populate the dropdown for upload
+        docTypeSelect.innerHTML = docsData.value.map(doc => `
+                    <option value="${doc.documentType}">${doc.description}</option>
+                `).join('');
+      } else {
+        docList.innerHTML = '<li>No specific documents required for this course.</li>';
+        docTypeSelect.innerHTML = '<option value="">No required documents</option>';
+      }
+
+      // Handle document upload button click
+      document.getElementById('submit-document-btn').addEventListener('click', () => {
+        const docType = document.getElementById('document-type-select').value;
+        const fileInput = document.getElementById('document-upload');
+        if (!fileInput.files.length || !docType) {
+          showMessage("Please select a document type and a file to upload.");
+          return;
+        }
+
+        showMessage("Simulating document upload...");
+        const file = fileInput.files[0];
+        const stagedDoc = {
+          documentType: docType,
+          fileName: file.name,
+          mimeType: file.type,
+        };
+        stagedDocuments.push(stagedDoc);
+        showMessage("Document staged successfully! It will be submitted with your subscription request.");
+
+        // Update the staged documents list for the user to see
+        stagedDocsList.innerHTML = stagedDocuments.map(doc => `
+                    <li>${doc.documentType}: ${doc.fileName}</li>
+                `).join('');
+
+        // Reset file input for next upload
+        fileInput.value = '';
+      });
+
+      // Handle subscription submission
+      document.getElementById('subscribe-btn').addEventListener('click', async () => {
+        const travelerId = state.selectedTravelerId; // Use state variable
+        if (!travelerId) {
+          showMessage("Please select a traveler from the dropdown on the main page.");
+          return;
+        }
+
+        // // Simulate traveler sign-up if not found. In a real app, this would be a separate flow.
+        // const traveler = mockData.travelers.find(t => t.ID === travelerId);
+        // let selectedTravelerId = travelerId;
+        // if (!traveler) {
+        //   showMessage("Traveler not found. Simulating new traveler creation...");
+        //   const newTraveler = await ApiService.createTraveler({ firstName: "Demo", lastName: "User", email: "demo@example.com" });
+        //   selectedTravelerId = newTraveler.ID;
+        // }
+
+        // Create the subscription
+        const subscription = await ApiService.createSubscription({
+          traveler_ID: travelerId,
+          course_ID: state.selectedCourse.ID,
+          status: "DocsPending"
+        });
+
+        if (subscription && stagedDocuments.length > 0) {
+          showMessage("Subscription created. Now submitting documents...");
+          // Step 2: Submit the staged documents using the new subscription ID
+          await ApiService.createSubmittedDocumentsBySubscriptionID(subscription.value.ID, stagedDocuments, docsData.value);
+        }
+
+        // Now, show the success message and render the subscriptions page
+        showMessage("Subscription request and documents submitted successfully!");
+        renderManageSubscriptions();
+      });
+    }
+
+    /**
+     * Renders the "Manage Subscriptions" page for a traveler.
+     */
+    async function renderManageSubscriptions() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+                <h2 class="text-3xl font-bold text-gray-900 mb-8">My Subscriptions</h2>
+                <div id="subscription-list" class="space-y-6">
+                    <p class="text-gray-500">Loading subscriptions...</p>
+                </div>
+            `;
+
+      const travelerId = state.selectedTravelerId; // Now using the state variable
+
+      // Check if a traveler is selected before fetching subscriptions
+      if (!travelerId) {
+        container.innerHTML = `<p class="text-red-500">Please go back to the Courses page and select a traveler.</p>`;
+        return;
+      }
+
+      // const reqDocumentsByCourse = await ApiService.getRequiredDocuments(state.selectedCourse.ID);
+      const subscriptionData = await ApiService.getSubscriptions();
+      const documents = await ApiService.getSubmittedDocuments();
+      const courses = await ApiService.getCourses();
+      const subscriptionList = document.getElementById('subscription-list');
+
+      const mySubscriptions = subscriptionData.value.filter(s => s.traveler_ID === travelerId);
+
+      if (mySubscriptions.length > 0) {
+
+        // Fetch all required documents in parallel
+        const requiredDocsArr = await Promise.all(
+          mySubscriptions.map(s => ApiService.getRequiredDocuments(s.course_ID))
+        );
+
+        subscriptionList.innerHTML = mySubscriptions.map((s, idx) => {
+          const course = courses.value.find(c => c.ID === s.course_ID);
+          const allRequiredDocs = requiredDocsArr[idx]?.value || [];
+          const relevantDocs = documents.value.filter(d => d.subscription_ID === s.ID);
+          let actionButton = '';
+          let statusColor = 'bg-gray-400';
+
+          switch (s.status) {
+            case 'DocsPending':
+              statusColor = 'bg-yellow-400';
+              break;
+            case 'DocsChecking':
+              statusColor = 'bg-blue-400';
+              break;
+            case 'DepositPending':
+              statusColor = 'bg-purple-400';
+              actionButton = `<button data-id="${s.ID}" class="action-button ui5-button ui5-button-primary pay-deposit-btn mt-4">Pay Deposit ($${course.depositAmount})</button>`;
+              break;
+            case 'Confirmed':
+              statusColor = 'bg-green-400';
+              break;
+            case 'Canceled':
+              statusColor = 'bg-red-400';
+              break;
+            default:
+              statusColor = 'bg-gray-400';
+              break;
+          }
+
+          const documentsHtml = allRequiredDocs.length > 0 ? `
+                        <div class="mt-4 p-4 bg-gray-100 rounded-md">
+                            <h4 class="font-semibold text-sm mb-2">Document Status</h4>
+                            <ul class="space-y-1 text-xs text-gray-700">
+                                ${allRequiredDocs.map(requiredDoc => {
+            const matchingDoc = relevantDocs.find(d => d.documentType === requiredDoc.documentType);
+            const status = matchingDoc ? matchingDoc.status : 'Missing';
+            const statusClass = status === 'Uploaded' ? 'bg-green-500' : 'bg-red-500';
+            return `
+                                        <li class="flex items-center space-x-2">
+                                            <span class="font-medium">${requiredDoc.description} (${requiredDoc.documentType})</span>
+                                            <span class="text-xs p-1 rounded-full text-white ${statusClass}">${status}</span>
+                                        </li>
+                                    `;
+          }).join('')}
+                            </ul>
+                        </div>
+                    ` : `<p class="text-sm text-gray-500 mt-4">No documents required for this course.</p>`;
+
+          return `
+                        <div class="ui5-card p-6 flex flex-col md:flex-row justify-between items-start">
+                            <div class="flex-grow">
+                                <h3 class="text-xl font-bold mb-2">${course.name}</h3>
+                                <p class="text-gray-600">Status: <span class="font-semibold p-1 px-2 rounded-full text-white text-sm ${statusColor}">${s.status}</span></p>
+                                <p class="text-gray-600 text-sm mt-1">Subscription ID: ${s.ID}</p>
+                                ${s.s4hanaBusinessPartnerID ? `<p class="text-gray-600 text-sm mt-1">S/4HANA BP ID: ${s.s4hanaBusinessPartnerID}</p>` : ''}
+                                ${s.s4hanaSalesOrderID ? `<p class="text-gray-600 text-sm mt-1">S/4HANA SO ID: ${s.s4hanaSalesOrderID}</p>` : ''}
+                                ${documentsHtml}
+                            </div>
+                            <div class="mt-4 md:mt-0">
+                                ${actionButton}
+                            </div>
+                        </div>
+                    `;
+        }).join('');
+
+      } else {
+        subscriptionList.innerHTML = '<p class="text-gray-500 text-center">You have no active subscriptions.</p>';
+      }
+
+
+      // Event listener for the "Pay Deposit" button
+      document.querySelectorAll('.pay-deposit-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          const subscriptionId = e.target.getAttribute('data-id');
+          showMessage("Simulating payment and S/4HANA integration...");
+
+          const businessPartner = await ApiService.createS4BusinessPartner(state.selectedTravelerId);
+          console.log("Created Business Partner: " + JSON.stringify(businessPartner));
+
+          // Simulate the backend update
+          await ApiService.updateSubscriptionStatus(
+            subscriptionId,
+            'Confirmed',
+            businessPartner.value.BusinessPartner,
+            'SO' + Math.floor(Math.random() * 1000000)
+          );
+
+          // await ApiService.updateSubscriptionStatus(
+          //   subscriptionId,
+          //   'Confirmed'
+          // );
+
+          showMessage("Payment confirmed and subscription updated!");
+          renderManageSubscriptions();
+        });
+      });
+    }
+
+    /**
+         * Renders the "Manage Travelers" page for an admin.
+         */
+    async function renderManageTravelers() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+                <h2 class="text-3xl font-bold text-gray-900 mb-8">Manage Travelers</h2>
+                <div id="traveler-list-container" class="ui5-card p-6">
+                    <p class="text-gray-500">Loading traveler data...</p>
+                </div>
+            `;
+
+      const [travelersResponse, subscriptionsResponse, documentsResponse, coursesResponse] = await Promise.all([
+        ApiService.getTravelers(),
+        ApiService.getSubscriptions(),
+        ApiService.getSubmittedDocuments(),
+        ApiService.getCourses()
+      ]);
+
+      const travelers = travelersResponse.value;
+      const subscriptions = subscriptionsResponse.value;
+      const documents = documentsResponse.value;
+      const courses = coursesResponse.value;
+
+      const travelerListContainer = document.getElementById('traveler-list-container');
+
+      // Get a list of all unique course IDs from all subscriptions
+      const allCourseIds = [...new Set(subscriptions.map(s => s.course_ID))];
+
+      // Fetch all required documents for all unique courses in parallel
+      const requiredDocsResults = await Promise.all(
+        allCourseIds.map(courseId => ApiService.getRequiredDocuments(courseId))
+      );
+
+      // Create a map for quick lookup: courseId -> required documents
+      const requiredDocsMap = allCourseIds.reduce((acc, courseId, index) => {
+        acc[courseId] = requiredDocsResults[index]?.value || [];
+        return acc;
+      }, {});
+
+      if (travelers.length > 0) {
+        travelerListContainer.innerHTML = `
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscriptions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${travelers.map(traveler => {
+          const travelerSubs = subscriptions.filter(s => s.traveler_ID === traveler.ID);
+
+          const subsHtml = travelerSubs.length > 0 ? travelerSubs.map(sub => {
+            const course = courses.find(c => c.ID === sub.course_ID);
+            const allRequiredDocs = requiredDocsMap[sub.course_ID] || [];
+            const relevantDocs = documents.filter(d => d.subscription_ID === sub.ID);
+            let actionButton = '';
+            if (sub.status === 'DocsPending' || sub.status === 'DocsChecking' || sub.status === 'ActionRequired') {
+              actionButton = `<button data-id="${sub.ID}" class="action-button ui5-button bg-gray-200 text-gray-800 hover:bg-gray-300 approve-docs-btn text-xs py-1 px-3 rounded-md">Approve Docs</button>`;
+            } else if (sub.status === 'DepositPending') {
+              actionButton = `<button data-id="${sub.ID}" class="action-button ui5-button bg-gray-200 text-gray-800 hover:bg-gray-300 approve-payment-btn text-xs py-1 px-3 rounded-md">Approve Payment</button>`;
+            }
+
+            const documentsHtml = allRequiredDocs.length > 0 ? `
+                                        <div class="mt-2 p-2 bg-gray-100 rounded-md">
+                                            <h5 class="font-semibold text-xs mb-1">Document Status</h5>
+                                            <ul class="space-y-1 text-xs text-gray-700">
+                                                ${allRequiredDocs.map(requiredDoc => {
+              const matchingDoc = relevantDocs.find(d => d.documentType === requiredDoc.documentType);
+              const status = matchingDoc ? matchingDoc.status : 'Missing';
+              const statusClass = status === 'Uploaded' ? 'bg-green-500' : 'bg-red-500';
+              return `
+                                                        <li class="flex items-center space-x-1">
+                                                            <span class="font-medium">${requiredDoc.description}</span>
+                                                            <span class="text-xs p-1 rounded-full text-white ${statusClass}">${status}</span>
+                                                        </li>
+                                                    `;
+            }).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : `<p class="text-xs text-gray-500 mt-2">No documents required for this course.</p>`;
+
+            return `
+                                        <div class="my-2 p-3 border border-gray-200 rounded-md shadow-sm bg-white">
+                                            <div class="flex justify-between items-center mb-2">
+                                            <div>
+                                                <p class="text-sm font-medium">${course?.name || 'Unknown Course'}</p>
+                                                <p class="text-xs text-gray-500">Status: ${sub.status}</p>
+                                                <p class="text-xs text-gray-500">ID: ${sub.ID}</p>
+                                                ${sub.s4hanaBusinessPartnerID ? `<p class="text-xs text-gray-500">S/4HANA BP ID: ${sub.s4hanaBusinessPartnerID}</p>` : ''}
+                                ${sub.s4hanaSalesOrderID ? `<p class="text-xs text-gray-500">S/4HANA SO ID: ${sub.s4hanaSalesOrderID}</p>` : ''}
+                                            </div>
+                                            ${actionButton}
+                                            </div>
+                                            ${documentsHtml}
+                                        </div>
+                                    `;
+          }).join('') : `<p class="text-sm text-gray-500">No subscriptions</p>`;
+
+          return `
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${traveler.firstName} ${traveler.lastName}</div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-500">${traveler.email}</div></td>
+                                        <td class="px-6 py-4"><div>${subsHtml}</div></td>
+                                    </tr>
+                                `;
+        }).join('')}
+                        </tbody>
+                    </table>
+                `;
+      } else {
+        travelerListContainer.innerHTML = '<p class="text-gray-500 text-center">No travelers have signed up yet.</p>';
+      }
+
+      // Add event listeners for admin actions
+      document.querySelectorAll('.approve-docs-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          const subscriptionId = e.target.getAttribute('data-id');
+          showMessage("Simulating document approval...");
+          await ApiService.updateSubscriptionStatus(subscriptionId, 'DepositPending');
+          showMessage("Subscription status updated to 'DepositPending'.");
+          renderManageTravelers();
+        });
+      });
+
+      document.querySelectorAll('.approve-payment-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          const subscriptionId = e.target.getAttribute('data-id');
+          showMessage("Simulating payment confirmation...");
+          await ApiService.updateSubscriptionStatus(
+            subscriptionId,
+            'Confirmed',
+            'BP' + Math.floor(Math.random() * 1000000),
+            'SO' + Math.floor(Math.random() * 1000000)
+          );
+          showMessage("Subscription status updated to 'Confirmed'.");
+          renderManageTravelers();
+        });
+      });
+    }
+
+    /**
+     * Renders the "Manage Courses" page for an admin.
+     */
+    async function renderManageCourses() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+          <h2 class="text-3xl font-bold text-gray-900 mb-8">Manage Courses</h2>
+          
+          <!-- Create New Course Form -->
+          <div class="ui5-card p-6 mb-8">
+              <h3 class="text-2xl font-bold mb-4">Create New Course</h3>
+              <form id="create-course-form" class="space-y-4">
+                  <input type="text" id="new-course-name" placeholder="Course Name" class="ui5-input w-full" required>
+                  <textarea type="text" id="new-course-description" placeholder="Description" class="ui5-input w-full" rows="3" required></textarea>
+                  <div class="flex space-x-4">
+                      <input type="number" id="new-course-price" placeholder="Price" class="ui5-input w-full" required>
+                      <input type="number" id="new-course-deposit" placeholder="Deposit Amount" class="ui5-input w-full" required>
+                  </div>
+                  <div id="required-docs-fields" class="space-y-2 border-t border-gray-200 pt-4">
+                      <h4 class="font-semibold">Required Documents:</h4>
+                      <div class="flex space-x-2">
+                          <input type="text" id="new-doc-type" placeholder="Document Type (e.g., ID_CARD)" class="ui5-input w-1/2">
+                          <input type="text" id="new-doc-desc" placeholder="Document Description" class="ui5-input w-1/2">
+                          <button type="button" id="add-doc-btn" class="ui5-button bg-gray-200 text-gray-800">+</button>
+                      </div>
+                      <ul id="doc-preview" class="list-disc list-inside"></ul>
+                  </div>
+                  <button type="submit" id="create-course-btn" class="ui5-button ui5-button-primary w-full">Save New Course</button>
+              </form>
+          </div>
+          
+          <!-- Existing Courses List -->
+          <div class="ui5-card p-6">
+              <h3 class="text-2xl font-bold mb-4">Existing Courses</h3>
+              <div id="existing-courses-list" class="space-y-4">
+                  <p class="text-gray-500">Loading courses...</p>
+              </div>
+          </div>
+      `;
+
+      // To prevent double submission, we manage a single docsToCreate array outside the function.
+      let docsToCreate = [];
+      const docPreviewList = document.getElementById('doc-preview');
+
+      // Function to handle adding a document to the temporary list
+      const handleAddDoc = () => {
+        const docType = document.getElementById('new-doc-type').value;
+        const docDesc = document.getElementById('new-doc-desc').value;
+        if (docType && docDesc) {
+          docsToCreate.push({ documentType: docType, description: docDesc });
+          const li = document.createElement('li');
+          li.textContent = `${docDesc} (${docType})`;
+          docPreviewList.appendChild(li);
+          document.getElementById('new-doc-type').value = '';
+          document.getElementById('new-doc-desc').value = '';
+        }
+      };
+
+      // Function to handle form submission
+      const handleFormSubmit = async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('new-course-name').value;
+        const description = document.getElementById('new-course-description').value;
+        const price = parseFloat(document.getElementById('new-course-price').value);
+        const deposit = parseFloat(document.getElementById('new-course-deposit').value);
+
+        if (name && description && !isNaN(price) && !isNaN(deposit)) {
+          showMessage("Creating new course...");
+
+          const newCourse = {
+            name,
+            description,
+            price,
+            depositAmount: deposit,
+            requiredDocuments: docsToCreate
+          };
+
+          const createdCourse = await ApiService.createCourse(newCourse);
+          console.log(createdCourse);
+
+          showMessage(`Course "${createdCourse.value.name}" created successfully!`);
+
+          // Re-render to show the new course and clear the form
+          renderManageCourses();
+        } else {
+          showMessage("Please fill out all fields correctly.");
+        }
+      };
+
+      // Add event listeners. We now add them *after* the DOM elements are rendered.
+      document.getElementById('add-doc-btn').addEventListener('click', handleAddDoc);
+      document.getElementById('create-course-form').addEventListener('submit', handleFormSubmit);
+
+      const coursesData = await ApiService.getCourses();
+      const existingCoursesList = document.getElementById('existing-courses-list');
+
+      if (coursesData.value.length > 0) {
+        existingCoursesList.innerHTML = coursesData.value.map(course => `
+                    <div class="ui5-card p-4">
+                        <h4 class="font-bold text-lg">${course.name}</h4>
+                        <p class="text-gray-600 text-sm">${course.description}</p>
+                        <p class="text-gray-500 text-xs mt-1">ID: ${course.ID}</p>
+                    </div>
+                `).join('');
+      } else {
+        existingCoursesList.innerHTML = '<p class="text-gray-500 text-center">No courses have been created yet.</p>';
+      }
+    }
+
+    // --- Navigation and Main App Initialization ---
+
+    document.getElementById('nav-courses-btn').addEventListener('click', () => {
+      state.currentView = 'coursesCatalog';
+      renderCoursesCatalog();
+    });
+    document.getElementById('nav-subscriptions-btn').addEventListener('click', () => {
+      state.currentView = 'manageSubscriptions';
+      renderManageSubscriptions();
+    });
+    document.getElementById('nav-admin-btn').addEventListener('click', () => {
+      document.getElementById('admin-dropdown').classList.toggle('hidden');
+    });
+    document.getElementById('nav-admin-travelers-btn').addEventListener('click', () => {
+      state.currentView = 'manageTravelers';
+      document.getElementById('admin-dropdown').classList.add('hidden');
+      renderManageTravelers();
+    });
+    document.getElementById('nav-admin-courses-btn').addEventListener('click', () => {
+      state.currentView = 'manageCourses';
+      document.getElementById('admin-dropdown').classList.add('hidden');
+      renderManageCourses();
+    });
+
+    // Initial page render
+    window.onload = async () => {
+      await ApiService.getAccessToken(); // Authenticate first
+
+      // Populate traveler dropdown and set up its event listener
+      const travelerSelect = document.getElementById('traveler-select');
+      const travelers = await ApiService.getTravelers();
+      travelers.value.forEach(traveler => {
+        const option = document.createElement('option');
+        option.value = traveler.ID;
+        option.textContent = `${traveler.firstName} ${traveler.lastName}`;
+        travelerSelect.appendChild(option);
+      });
+
+      // Set the initial selected traveler and update the state
+      if (travelers.value.length > 0) {
+        state.selectedTravelerId = travelers.value[0].ID;
+        travelerSelect.value = state.selectedTravelerId;
+      }
+
+      // Add event listener to update state when the dropdown changes
+      travelerSelect.addEventListener('change', (e) => {
+        state.selectedTravelerId = e.target.value;
+        showMessage(`Switched to traveler: ${e.target.options[e.target.selectedIndex].text}`);
+      });
+
+      renderCoursesCatalog(); // Load the default view
+    };
+  </script>
+
+</body>
+
+</html>
