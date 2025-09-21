@@ -1,0 +1,2425 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vertigo Travels</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"> -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="https://ui5.sap.com/resources/sap/ui/core/themes/base/SAP-icons.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .activate::before {
+      font-family: SAP-icons;
+      content: "\e208";
+    }
+
+    .save::before {
+      font-family: SAP-icons;
+      content: "\e09a";
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f2f5;
+    }
+
+    .ui5-card {
+      background-color: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .ui5-card:hover:not(.non-clickable) {
+      transform: translateY(-5px);
+    }
+
+    .ui5-button {
+      border-radius: 9999px;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      transition: background-color 0.2s;
+    }
+
+    .ui5-button-primary {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .ui5-button-primary:hover {
+      background-color: #0056b3;
+    }
+
+    .ui5-input {
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+    }
+
+    .ui5-header {
+      background-color: #1a3c5a;
+      color: white;
+    }
+
+    .ui5-header-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .action-button {
+      transition: all 0.2s;
+      transform: scale(1);
+    }
+
+    .action-button:hover {
+      transform: scale(1.05);
+    }
+
+    /* Style for the custom message box */
+    .message-box {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      text-align: center;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Additional styling for the dropdown in the header */
+    .header-dropdown-container {
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      width: 100%;
+      text-align: center;
+    }
+
+    @media (min-width: 768px) {
+      .header-dropdown-container {
+        flex-direction: row;
+        width: auto;
+        text-align: left;
+      }
+    }
+
+    /* Spinner for processing overlay */
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 4px solid #fff;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    #doc-review-modal {
+      max-height: 90vh;
+      /* Set a max height relative to the viewport height */
+      overflow-y: auto;
+      /* Add a vertical scrollbar if content overflows */
+      -webkit-overflow-scrolling: touch;
+      /* For a smoother scroll experience on mobile devices */
+    }
+
+    @media (max-width: 768px) {
+
+      /* Stack table rows and cells on small screens */
+      table,
+      thead,
+      tbody,
+      th,
+      td,
+      tr {
+        display: block;
+      }
+
+      thead tr {
+        position: absolute;
+        top: -9999px;
+        /* Hide the table headers visually */
+        left: -9999px;
+      }
+
+      tr {
+        border: 1px solid #ccc;
+        /* Add a border to separate rows/cards */
+        margin-bottom: 1rem;
+      }
+
+      td {
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+        /* Make space for the new labels */
+        text-align: right;
+      }
+
+      td:before {
+        content: attr(data-label);
+        /* Use a data attribute to display the header text */
+        position: absolute;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: bold;
+        color: #4a5568;
+        /* Tailwind's gray-700 */
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+
+  <header class="ui5-header shadow-md p-4 hidden">
+    <div class="container flex flex-col md:flex-row md:justify-between items-center space-y-4 md:space-y-0">
+      <h1 class="ui5-header-title text-2xl font-bold">Vertigo Travels</h1>
+      <nav class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2 w-full md:w-auto">
+        <div class="header-dropdown-container space-y-2 md:space-y-0 md:space-x-2">
+          <span class="text-sm text-gray-300">Switch Traveler:</span>
+          <select id="traveler-select" class="ui5-input bg-gray-600 text-white border-none w-full md:w-auto"></select>
+        </div>
+        <button id="nav-courses-btn"
+          class="ui5-button bg-gray-600 text-white hover:bg-gray-500 w-full md:w-auto">Courses</button>
+
+        <div class="relative w-full md:w-auto">
+          <button id="nav-traveler-btn"
+            class="ui5-button bg-gray-600 text-white hover:bg-gray-500 w-full md:w-auto">Traveler</button>
+          <div id="traveler-dropdown"
+            class="absolute hidden bg-white text-gray-800 rounded-md shadow-lg py-2 mt-2 w-full md:w-48 right-0 z-10">
+            <button id="nav-my-profile-btn" class="block px-4 py-2 w-full text-left hover:bg-gray-100">My
+              Profile</button>
+            <button id="nav-subscriptions-btn" class="block px-4 py-2 w-full text-left hover:bg-gray-100">My
+              Subscriptions</button>
+          </div>
+        </div>
+
+        <div class="relative w-full md:w-auto">
+          <button id="nav-admin-btn"
+            class="ui5-button bg-gray-600 text-white hover:bg-gray-500 w-full md:w-auto">Admin</button>
+          <div id="admin-dropdown"
+            class="absolute hidden bg-white text-gray-800 rounded-md shadow-lg py-2 mt-2 w-full md:w-48 right-0 z-10">
+            <button id="nav-admin-manage-travelers-btn"
+              class="block px-4 py-2 w-full text-left hover:bg-gray-100">Manage Travelers</button>
+            <button id="nav-admin-courses-btn" class="block px-4 py-2 w-full text-left hover:bg-gray-100">Manage
+              Courses</button>
+            <button id="nav-admin-manage-subscriptions-btn"
+              class="block px-4 py-2 w-full text-left hover:bg-gray-100">Manage Subscriptions</button>
+            <button id="nav-admin-pending-docs-btn" class="block px-4 py-2 w-full text-left hover:bg-gray-100">View
+              Pending Documents</button>
+          </div>
+        </div>
+      </nav>
+  </header>
+
+  <main id="app-container" class="container mt-8">
+  </main>
+
+  <div id="message-overlay" class="overlay hidden"></div>
+  <div id="message-box" class="message-box hidden">
+    <p id="message-text" class="mb-4"></p>
+    <button id="message-ok-btn" class="ui5-button ui5-button-primary">OK</button>
+  </div>
+
+  <div id="processing-overlay" class="overlay hidden" style="background-color: rgba(0, 0, 0, 0.75); z-index: 1001;">
+    <div class="spinner"></div>
+  </div>
+
+  <div id="doc-review-overlay" class="overlay hidden" style="z-index: 999;"></div>
+  <div id="doc-review-modal" class="message-box hidden w-11/12 md:w-1/2 max-w-2xl" style="z-index: 1000;">
+    <div class="text-left">
+      <h3 id="doc-modal-title" class="text-xl font-bold mb-4">Review Document</h3>
+      <div class="space-y-2 text-sm">
+        <p><strong>Document ID:</strong> <span id="doc-modal-documentid"></span></p>
+        <p><strong>File Name:</strong> <span id="doc-modal-filename"></span></p>
+        <p><strong>Document Type:</strong> <span id="doc-modal-doctype"></span></p>
+        <p><strong>MIME Type:</strong> <span id="doc-modal-mimetype"></span></p>
+        <p><strong>Status:</strong> <span id="doc-modal-status"></span></p>
+      </div>
+      <div class="mt-4 border-t pt-4">
+        <h4 class="font-semibold mb-2">Extracted Data</h4>
+        <div
+          class="bg-gray-100 p-4 rounded-md min-h-[100px] text-center text-gray-500 flex justify-center items-center">
+          <div>
+            <p><span id="doc-modal-extracteddata"></span></p>
+            <!-- <p class="text-xs">(Simulated for this demo)</p> -->
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 border-t pt-4">
+        <h4 class="font-semibold mb-2">Document Preview</h4>
+        <div id="doc-preview-container"
+          class="bg-gray-100 p-4 rounded-md min-h-[100px] text-center text-gray-500 flex justify-center items-center">
+          <div>
+            <p>Document preview would be shown here.</p>
+            <p class="text-xs">(Simulated for this demo)</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <button id="doc-modal-close-btn"
+      class="ui5-button bg-gray-600 hover:bg-gray-700 text-white mt-6 w-full">Close</button>
+  </div>
+
+
+  <script>
+    // Use a simple state object to manage the application's view and data.
+    const state = {
+      currentView: 'coursesCatalog',
+      selectedCourse: null,
+      courses: [],
+      subscriptions: [],
+      travelers: [],
+      adminCourses: [],
+      isAuthenticated: false,
+      accessToken: null,
+      selectedTravelerId: null, // New state variable to hold the selected traveler ID
+      xsuaaTokenEndpoint: null,
+      xsuaaTokenCID: null,
+      xsuaaTokenCSECRET: null,
+      backendCDSCAPEndpoint: null,
+      s4Endpoint: null,
+      schemaDocuments: []
+    };
+
+    // --- UTILITY FUNCTIONS ---
+
+    // Custom alert/message box function
+    function showMessage(message) {
+      const messageBox = document.getElementById('message-box');
+      const messageText = document.getElementById('message-text');
+      const messageOverlay = document.getElementById('message-overlay');
+      const okBtn = document.getElementById('message-ok-btn');
+
+      messageText.textContent = message;
+      messageBox.classList.remove('hidden');
+      messageOverlay.classList.remove('hidden');
+
+      okBtn.onclick = () => {
+        messageBox.classList.add('hidden');
+        messageOverlay.classList.add('hidden');
+      };
+    }
+
+    // Processing overlay functions
+    function showProcessingOverlay() {
+      document.getElementById('processing-overlay').classList.remove('hidden');
+    }
+
+    function hideProcessingOverlay() {
+      document.getElementById('processing-overlay').classList.add('hidden');
+    }
+
+    // A new function to handle all the data fetching and modal display logic
+    async function showDocumentDetails(details) {
+      const modal = document.getElementById('doc-review-modal');
+      const overlay = document.getElementById('doc-review-overlay');
+
+      // Show modal with a loading state
+      modal.classList.remove('hidden');
+      overlay.classList.remove('hidden');
+
+      // Set initial loading text
+      document.getElementById('doc-modal-title').textContent = 'Loading Document...';
+      document.getElementById('doc-modal-documentid').textContent = details.documentID;
+      document.getElementById('doc-modal-filename').textContent = details.fileName;
+      document.getElementById('doc-modal-doctype').textContent = details.docType;
+      document.getElementById('doc-modal-mimetype').textContent = details.mimeType;
+      document.getElementById('doc-modal-status').textContent = details.status;
+      document.getElementById('doc-modal-extracteddata').textContent = 'Loading extracted data...';
+      document.getElementById('doc-preview-container').innerHTML = '<p class="text-center text-gray-500">Loading document preview...</p>';
+
+      try {
+        // Fetch data from both APIs concurrently using Promise.all
+        const [ocrResponse, textResponse] = await Promise.all([
+          ApiService.getOcrResponse(details.documentID),
+          ApiService.getTextResponse(details.documentID)
+        ]);
+
+        // Get the relevant data from the API responses
+        const ocrData = ocrResponse.ocrResponse;
+        const textValue = textResponse.value;
+        const base64Image = ocrData.images[0];
+        const wordBoxes = ocrData.result[0].word_boxes;
+
+        // Now you can update the modal with the fetched data
+        document.getElementById('doc-modal-title').textContent = 'Review Document';
+        // document.getElementById('doc-modal-mimetype').textContent = ocrData.image_format; // Example
+        // document.getElementById('doc-modal-status').textContent = ocrData.status;
+
+        // Update the extracted data section with the text response
+        document.getElementById('doc-modal-extracteddata').textContent = textValue;
+
+        // Update the document preview section with the image
+        const imageHtml = `<img src="data:image/${ocrData.image_format};base64,${base64Image}" alt="Document Image">`;
+        document.getElementById('doc-preview-container').innerHTML = imageHtml;
+
+        // You would need a separate function or library to render bounding boxes on the image.
+        // This is a complex task and usually involves HTML canvas or SVG.
+        // For example, you would loop through the wordBoxes array and draw rectangles.
+        //
+        // Example of what a drawing function might look like (pseudo-code):
+        // drawBoundingBoxes(document.getElementById('doc-preview-image'), wordBoxes);
+
+        // After successfully loading the data, call the update API
+        try {
+          await ApiService.updateSubmittedDocuments(details.ID, 'Uploaded', textValue);
+          console.log('Successfully updated document status and data via API.');
+        } catch (updateError) {
+          console.error('Failed to update document via API:', updateError);
+          showMessage('An error occurred while updating the document status. Check the console for details.', 5000);
+        }
+
+      } catch (error) {
+        console.error("Failed to fetch document details:", error);
+        document.getElementById('doc-modal-title').textContent = 'Error Loading Document';
+        document.getElementById('doc-preview-container').innerHTML = '<p class="text-center text-red-500">Failed to load document data. Please try again.</p>';
+      }
+    }
+
+    // Document review modal functions
+    function openDocumentModal(details) {
+      document.getElementById('doc-modal-documentid').textContent = details.documentID || 'N/A';
+      document.getElementById('doc-modal-filename').textContent = details.fileName || 'N/A';
+      document.getElementById('doc-modal-doctype').textContent = details.docType || 'N/A';
+      document.getElementById('doc-modal-mimetype').textContent = details.mimeType || 'N/A';
+      document.getElementById('doc-modal-extracteddata').textContent = details.extractedData || 'N/A';
+      document.getElementById('doc-modal-status').textContent = details.status || 'N/A';
+
+      document.getElementById('doc-review-modal').classList.remove('hidden');
+      document.getElementById('doc-review-overlay').classList.remove('hidden');
+    }
+
+    function closeDocumentModal() {
+      document.getElementById('doc-review-modal').classList.add('hidden');
+      document.getElementById('doc-review-overlay').classList.add('hidden');
+    }
+
+    // --- MOCK API SERVICE ---
+    const ApiService = {
+      async getAccessToken() {
+        try {
+          // This API call now safely uses credentials fetched during initialization
+          const url = 'https://sadevmain.authentication.eu10.hana.ondemand.com/oauth/token';
+          const options = {
+            method: 'POST',
+            body: new URLSearchParams({
+              client_id: state.xsuaaTokenCID,
+              client_secret: state.xsuaaTokenCSECRET,
+              grant_type: 'client_credentials'
+            })
+          };
+
+          const response = await fetch(url, options);
+          const data = await response.json();
+          state.accessToken = data.access_token;
+          state.isAuthenticated = true;
+          console.log("Token received.");
+          return state.accessToken;
+        } catch (error) {
+          console.error("Failed to get access token:", error);
+          showMessage("Failed to authenticate with the API. Please check the console.");
+          throw error; // Re-throw to stop initialization
+        }
+      },
+
+      async getCourses() {
+        console.log("Simulating GET /traveler/Courses");
+        const url = state.backendCDSCAPEndpoint + '/admin/Courses';
+        const token = state.accessToken;
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data.value
+        };
+      },
+
+      async getRequiredDocuments(courseId) {
+        console.log(`Simulating GET /traveler/Courses(ID='${courseId}')/requiredDocuments`);
+        const url = state.backendCDSCAPEndpoint + `/admin/Courses/${courseId}/requiredDocuments`;
+        const token = state.accessToken;
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data.value
+        };
+      },
+
+      async createSubscription(subscriptionData) {
+        console.log("Simulating POST /traveler/Subscriptions", subscriptionData);
+        const url = state.backendCDSCAPEndpoint + `/admin/Subscriptions`;
+        const token = state.accessToken;
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify(subscriptionData)
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data
+        };
+      },
+
+      async createSubmittedDocumentsBySubscriptionID(subscriptionId, documentsData, requiredDocuments) {
+        console.log(`Posting each document for Subscription ID: ${subscriptionId}`, documentsData);
+        const url = state.backendCDSCAPEndpoint + `/admin/SubmittedDocuments`;
+        const token = state.accessToken;
+        const submittedDocumentTypes = new Set(documentsData.map(doc => doc.documentType));
+
+        const postAndProcessPromises = documentsData.map(async (doc) => {
+          const docPayload = {
+            ...doc,
+            subscription_ID: subscriptionId,
+            status: 'Uploaded'
+          };
+
+          // Initiate both promises in parallel to save time
+          const submitPromise = fetch(url, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(docPayload)
+          }).then(response => response.json());
+
+          const processPromise = fetch('/process-document', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              documentTypeId: doc.documentTypeSchemaID,
+              fileId: doc.documentID
+            })
+          }).then(response => response.json());
+
+          // Await both promises to get their results
+          const [submitResponse, processResponse] = await Promise.all([submitPromise, processPromise]);
+
+          // Extract documentId from the successful process response
+          const documentId = processResponse?.execute?.documentId;
+
+          if (documentId) {
+            // Now that we have the documentId, we can make the email call
+            const emailPromise = fetch('/send-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                // Assuming you have access to user info like name and email
+                // from a state or context. Replace with actual values.
+                name: 'Admin',
+                email: 'sandboxadmin@vjrrw.onmicrosoft.com',
+                // Use the documentId from the response in the subject and message
+                subject: `New Document for Approval: ${documentId}`,
+                message: `https://sa-gen-ai-enablement-ou0xihwt.eu10.doc.cloud.sap/workspace#/Documents(${documentId})`
+              })
+            }).then(response => {
+              if (!response.ok) {
+                console.error(`Failed to send email for doc ${documentId}:`, response.statusText);
+              }
+              // Return a resolved promise to not break the Promise.all chain
+              return response.text();
+            }).catch(error => {
+              console.error(`Error sending email for doc ${documentId}:`, error);
+              // Return a resolved promise to not break the Promise.all chain
+              return Promise.resolve(null);
+            });
+
+            // Return all three results for tracking
+            return Promise.all([submitResponse, processResponse, emailPromise]);
+          } else {
+            console.error('Document ID not found in process-document response.');
+            return [submitResponse, processResponse, null];
+          }
+        });
+
+        requiredDocuments.forEach(requiredDoc => {
+          if (!submittedDocumentTypes.has(requiredDoc.documentType)) {
+            const docPayload = {
+              documentType: requiredDoc.documentType,
+              fileName: null,
+              mimeType: null,
+              subscription_ID: subscriptionId,
+              status: 'Missing'
+            };
+            postAndProcessPromises.push(fetch(url, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(docPayload)
+            }).then(response => response.json()));
+          }
+        });
+
+        return Promise.all(postAndProcessPromises);
+      },
+
+      async getSubscriptions() {
+        console.log("Simulating GET /traveler/Subscriptions");
+        const url = state.backendCDSCAPEndpoint + '/admin/Subscriptions';
+        const token = state.accessToken;
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data.value
+        };
+      },
+
+      async getTravelers() {
+        console.log("Simulating GET /admin/Travelers");
+        const url = state.backendCDSCAPEndpoint + '/admin/Travelers';
+        const token = state.accessToken;
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data.value
+        };
+      },
+
+      async getTraveler(travelerId) {
+        console.log(`Simulating GET /traveler/Travelers(ID='${travelerId}')`);
+        const url = state.backendCDSCAPEndpoint + `/admin/Travelers/${travelerId}`;
+        const token = state.accessToken;
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data
+        };
+      },
+
+      async getSubmittedDocuments() {
+        console.log("Simulating GET /admin/SubmittedDocuments");
+        const url = state.backendCDSCAPEndpoint + '/admin/SubmittedDocuments';
+        const token = state.accessToken;
+        const options = {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data.value
+        };
+      },
+
+      async createS4BusinessPartner(travelerId) {
+        const traveler = await this.getTraveler(travelerId);
+        console.log("Creating S/4HANA Business Partner for traveler: ", traveler);
+        const url = state.backendCDSCAPEndpoint + `/s4-api/createNewBusinessPartner`;
+        const token = state.accessToken;
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            "message": {
+              "firstName": traveler.value.firstName,
+              "lastName": traveler.value.lastName,
+              "email": traveler.value.email
+            }
+          })
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data
+        };
+      },
+
+      async updateSubscriptionStatus(subscriptionId, status, s4hanaBPID = null, s4hanaSOID = null) {
+        console.log(`Simulating PATCH /admin/Subscriptions/${subscriptionId}`, {
+          status,
+          s4hanaBusinessPartnerID: s4hanaBPID,
+          s4hanaSalesOrderID: s4hanaSOID
+        });
+        const url = state.backendCDSCAPEndpoint + `/admin/Subscriptions/${subscriptionId}`;
+        const token = state.accessToken;
+        const options = {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            "status": status,
+            "s4hanaBusinessPartnerID": s4hanaBPID,
+            "s4hanaSalesOrderID": s4hanaSOID
+          })
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data
+        };
+      },
+
+      async updateSubmittedDocuments(submittedDocumentsID, status, extractedData) {
+        console.log(`Simulating PATCH /admin/SubmittedDocuments/${submittedDocumentsID}`, {
+          status,
+          extractedData: extractedData
+        });
+        const url = state.backendCDSCAPEndpoint + `/admin/SubmittedDocuments/${submittedDocumentsID}`;
+        const token = state.accessToken;
+        const options = {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            "status": status,
+            "extractedData": extractedData
+          })
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data
+        };
+      },
+
+      async updateSubmittedDocumentsWithDocumentFileID(submittedDocumentsID, status, documentFileID, extractedData) {
+        console.log(`Simulating PATCH /admin/SubmittedDocuments/${submittedDocumentsID}`, {
+          status,
+          extractedData: extractedData
+        });
+        const url = state.backendCDSCAPEndpoint + `/admin/SubmittedDocuments/${submittedDocumentsID}`;
+        const token = state.accessToken;
+        const options = {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            "status": status,
+            "extractedData": extractedData,
+            "documentID": documentFileID
+          })
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data
+        };
+      },
+
+      async createCourse(courseData) {
+        console.log("Simulating POST /admin/Courses", courseData);
+        const url = state.backendCDSCAPEndpoint + `/admin/Courses`;
+        const token = state.accessToken;
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify(courseData)
+        };
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return {
+          value: data
+        };
+      },
+
+      async getSchemaDocuments() {
+        console.log("Fetching schema documents from AI services...");
+        const url = '/schemas';
+        // Note: The prompt does not specify authentication for this endpoint. Assuming it is unauthenticated.
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch schema documents: ${response.statusText}`);
+        }
+        const data = await response.json();
+        // Assuming the data structure is data.d.results
+        return data.value;
+      },
+
+      async getOcrResponse(documentID) {
+        // Now call your new proxy route on your server
+        const url = `/document-ocr/${documentID}`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch OCR response from proxy server.');
+        }
+
+        return response.json();
+      },
+
+      async getTextResponse(documentID) {
+        // Now call your new proxy route on your server
+        const url = `/document-text/${documentID}`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch text response from proxy server.');
+        }
+
+        return response.json();
+      },
+
+      async createTraveler(travelerData) {
+        console.log("Simulating POST /admin/Travelers", travelerData);
+        const url = state.backendCDSCAPEndpoint + `/admin/Travelers`;
+        const token = state.accessToken;
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify(travelerData)
+        };
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          throw new Error(`Failed to create traveler: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return {
+          value: data
+        };
+      },
+
+      async updateTraveler(travelerId, updateData) {
+        console.log(`Simulating PATCH /admin/Travelers/${travelerId}`, updateData);
+        const url = state.backendCDSCAPEndpoint + `/admin/Travelers/${travelerId}`;
+        const token = state.accessToken;
+        const options = {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify(updateData)
+        };
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          throw new Error(`Failed to update traveler: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return {
+          value: data
+        };
+      },
+
+      async getOpenDocuments() {
+        console.log("Fetching open documents for review...");
+        const url = `/documents/reviewNeeded`;
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch open documents: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data.value;
+      },
+
+    };
+
+    // --- VIEW RENDERING FUNCTIONS ---
+
+    async function renderCoursesCatalog() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+        <div class="flex flex-col md:flex-row items-center mb-6 space-y-4 md:space-y-0 md:space-x-4">
+            <h2 class="text-3xl font-bold text-gray-900">Courses Catalog</h2>
+        </div>
+        <div id="course-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <p class="text-gray-500">Loading courses...</p>
+        </div>
+      `;
+
+      const coursesData = await ApiService.getCourses();
+      const courseList = document.getElementById('course-list');
+
+      if (coursesData.value.length > 0) {
+        courseList.innerHTML = coursesData.value.map(course => `
+          <div class="ui5-card p-4 flex flex-col items-center text-center cursor-pointer">
+              <img src="${course.image || 'resources/img/placeholder.png'}" alt="${course.name}" class="rounded-lg mb-4 w-full h-48 object-cover">
+              <h3 class="text-xl font-semibold mb-2">${course.name}</h3>
+              <p class="text-gray-600 mb-4 flex-grow">${course.description}</p>
+              <span class="text-lg font-bold text-gray-900 mb-4">$${course.price}</span>
+              <button data-course-id="${course.ID}" class="ui5-button ui5-button-primary w-full view-course-btn">View Details</button>
+          </div>
+        `).join('');
+      } else {
+        courseList.innerHTML = '<p class="text-gray-500 text-center col-span-full">No courses available at the moment.</p>';
+      }
+
+      document.querySelectorAll('.view-course-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const courseId = e.target.getAttribute('data-course-id');
+          state.selectedCourse = coursesData.value.find(c => c.ID === courseId);
+          renderCourseDetail();
+        });
+      });
+    }
+
+    async function renderCourseDetail() {
+      if (!state.selectedCourse) {
+        renderCoursesCatalog();
+        return;
+      }
+
+      const stagedDocuments = [];
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Course Details: ${state.selectedCourse.name}</h2>
+        <div class="flex flex-col lg:flex-row lg:space-x-8">
+            <div class="w-full lg:w-1/2 ui5-card p-6 mb-8 lg:mb-0 non-clickable">
+                <img src="${state.selectedCourse.image || 'resources/img/placeholder.jpg'}" alt="${state.selectedCourse.name}" class="rounded-lg mb-4 w-full h-auto object-cover">
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">${state.selectedCourse.name}</h3>
+                <p class="text-gray-600 mb-4">${state.selectedCourse.description}</p>
+                <ul class="space-y-2 text-lg">
+                    <li><span class="font-semibold">Price:</span> $${state.selectedCourse.price}</li>
+                    <li><span class="font-semibold">Required Deposit:</span> $${state.selectedCourse.depositAmount}</li>
+                </ul>
+            </div>
+            <div class="w-full lg:w-1/2 ui5-card p-6 non-clickable">
+                <h3 class="text-2xl font-bold mb-4">Finalize your Subscription</h3>
+                <div id="required-documents-section" class="mb-6">
+                    <h4 class="text-xl font-semibold mb-2">Required Documents</h4>
+                    <p class="text-gray-600 mb-4">Please upload the following documents.</p>
+                    <ul id="document-list" class="list-disc list-inside space-y-2 text-gray-700"></ul>
+                    <div id="staged-docs-preview" class="mt-4">
+                        <h5 class="font-bold">Staged Documents:</h5>
+                        <ul id="staged-docs-list" class="list-disc list-inside text-sm">
+                            <li class="text-gray-500">No documents staged yet.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h4 class="text-xl font-semibold mb-2">Upload Documents</h4>
+                    <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                        <select id="document-type-select" class="ui5-input flex-grow"></select>
+                        <input type="file" id="document-upload" class="ui5-input flex-grow">
+                    </div>
+                    <button id="submit-document-btn" class="ui5-button ui5-button-primary w-full">Stage Document</button>
+                </div>
+                <button id="subscribe-btn" class="ui5-button ui5-button-primary mt-6 w-full">Submit Subscription Request</button>
+            </div>
+        </div>
+      `;
+
+      const docsData = await ApiService.getRequiredDocuments(state.selectedCourse.ID);
+      const docList = document.getElementById('document-list');
+      const docTypeSelect = document.getElementById('document-type-select');
+      const stagedDocsList = document.getElementById('staged-docs-list');
+
+      if (docsData.value.length > 0) {
+        console.log("Required documents for course:", docsData.value);
+        docList.innerHTML = docsData.value.map(doc => `<li>${doc.description} (${doc.documentType})</li>`).join('');
+        docTypeSelect.innerHTML = docsData.value.map(doc => `<option value="${doc.documentTypeSchemaID}">${doc.documentType}</option>`).join('');
+      } else {
+        docList.innerHTML = '<li>No specific documents required for this course.</li>';
+        docTypeSelect.innerHTML = '<option value="">No required documents</option>';
+      }
+
+      document.getElementById('submit-document-btn').addEventListener('click', async () => {
+        const docTypeSelect = document.getElementById('document-type-select');
+
+        // Correct way to get the displayed text
+        const docType = docTypeSelect.selectedOptions[0].textContent;
+
+        // Correct way to get the unique value
+        const docTypeSchemaID = docTypeSelect.value;
+
+        console.log("Selected document type:", docType);
+        console.log("Selected schema ID:", docTypeSchemaID);
+
+        const fileInput = document.getElementById('document-upload');
+        if (!fileInput.files.length || !docType) {
+          showMessage("Please select a document type and a file to upload.");
+          return;
+        }
+        const file = fileInput.files[0];
+
+        // Show an error if no file is selected
+        if (!file) {
+          showMessage('Please select a file first.', 'bg-red-200 text-red-800');
+          return;
+        }
+
+        // Show a loading message
+        showMessage('Uploading file...', 'bg-blue-200 text-blue-800');
+
+        // Create a FormData object and append the file
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const url = '/upload';
+
+        try {
+          // Perform the fetch request to the local server
+          const response = await fetch(url, {
+            method: 'POST',
+            body: formData
+          });
+
+          // Check for a successful response (status code 200-299)
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || `HTTP error! Status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          // Log the API response and display a success message
+          console.log(data);
+          showMessage('File uploaded successfully! Check the console for the response data.', 'bg-green-200 text-green-800');
+
+          const stagedDoc = {
+            documentType: docType,
+            documentTypeSchemaID: docTypeSchemaID,
+            fileName: file.name,
+            mimeType: file.type,
+            documentID: data.ID
+          };
+          stagedDocuments.push(stagedDoc);
+          showMessage("Document staged successfully!");
+          stagedDocsList.innerHTML = stagedDocuments.map(doc => `<li>${doc.documentType}: ${doc.fileName}</li> | ${doc.documentID}`).join('');
+          fileInput.value = '';
+
+        } catch (error) {
+          // Log and display any errors
+          console.error('Upload failed:', error);
+          showMessage(`Upload failed: ${error.message}`, 'bg-red-200 text-red-800');
+        }
+
+
+      });
+
+      document.getElementById('subscribe-btn').addEventListener('click', async () => {
+        const travelerId = state.selectedTravelerId;
+        if (!travelerId) {
+          showMessage("Please select a traveler from the dropdown in the header.");
+          return;
+        }
+        showProcessingOverlay();
+        try {
+          const subscription = await ApiService.createSubscription({
+            traveler_ID: travelerId,
+            course_ID: state.selectedCourse.ID,
+            status: "DocsPending"
+          });
+          if (subscription && subscription.value.ID) {
+            await ApiService.createSubmittedDocumentsBySubscriptionID(subscription.value.ID, stagedDocuments, docsData.value);
+          }
+          hideProcessingOverlay();
+          showMessage("Subscription request and documents submitted successfully!");
+          renderManageSubscriptions();
+        } catch (error) {
+          hideProcessingOverlay();
+          console.error("Failed to create subscription:", error);
+          showMessage("An error occurred during submission. Please try again.");
+        }
+      });
+    }
+
+    async function renderManageSubscriptions() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">My Subscriptions</h2>
+        <div id="subscription-list" class="space-y-6">
+            <p class="text-gray-500">Loading subscriptions...</p>
+        </div>
+      `;
+
+      const travelerId = state.selectedTravelerId;
+      if (!travelerId) {
+        container.innerHTML = `<p class="text-red-500">Please go back to the Courses page and select a traveler.</p>`;
+        return;
+      }
+
+      const [subscriptionData, documents, courses] = await Promise.all([
+        ApiService.getSubscriptions(),
+        ApiService.getSubmittedDocuments(),
+        ApiService.getCourses()
+      ]);
+      const subscriptionList = document.getElementById('subscription-list');
+      const mySubscriptions = subscriptionData.value.filter(s => s.traveler_ID === travelerId);
+
+      if (mySubscriptions.length > 0) {
+        const requiredDocsArr = await Promise.all(mySubscriptions.map(s => ApiService.getRequiredDocuments(s.course_ID)));
+        subscriptionList.innerHTML = mySubscriptions.map((s, idx) => {
+          const course = courses.value.find(c => c.ID === s.course_ID);
+          const allRequiredDocs = requiredDocsArr[idx]?.value || [];
+          const relevantDocs = documents.value.filter(d => d.subscription_ID === s.ID);
+          let actionButton = '';
+          let statusColor = 'bg-gray-400';
+          switch (s.status) {
+            case 'DocsPending': statusColor = 'bg-yellow-400'; break;
+            case 'DocsChecking': statusColor = 'bg-blue-400'; break;
+            case 'DepositPending':
+              statusColor = 'bg-purple-400';
+              actionButton = `<button data-id="${s.ID}" class="action-button ui5-button ui5-button-primary pay-deposit-btn mt-4">Pay Deposit ($${course.depositAmount})</button>`;
+              break;
+            case 'Confirmed': statusColor = 'bg-green-400'; break;
+            case 'Canceled': statusColor = 'bg-red-400'; break;
+          }
+          const documentsHtml = allRequiredDocs.length > 0 ? `
+            <div class="mt-4 p-4 bg-gray-100 rounded-md">
+                <h4 class="font-semibold text-sm mb-2">Document Status</h4>
+                <ul class="space-y-1 text-xs text-gray-700">
+                    ${allRequiredDocs.map(requiredDoc => {
+            const matchingDoc = relevantDocs.find(d => d.documentType === requiredDoc.documentType);
+            const status = matchingDoc ? matchingDoc.status : 'Missing';
+            const statusClass = status === 'Uploaded' ? 'text-green-600' : 'text-red-600';
+            return `<li class="flex items-center space-x-2"><span class="font-medium">${requiredDoc.description} (${requiredDoc.documentType})</span><span class="font-bold ${statusClass}">${status}</span></li>`;
+          }).join('')}
+                </ul>
+            </div>` : `<p class="text-sm text-gray-500 mt-4">No documents required.</p>`;
+          return `
+            <div class="ui5-card p-6 flex flex-col md:flex-row justify-between items-start non-clickable">
+                <div class="flex-grow">
+                    <h3 class="text-xl font-bold mb-2">${course.name}</h3>
+                    <p class="text-gray-600">Status: <span class="font-semibold p-1 px-2 rounded-md text-white text-sm ${statusColor}">${s.status}</span></p>
+                    <p class="text-gray-600 text-sm mt-1">Subscription ID: ${s.ID}</p>
+                    ${s.s4hanaBusinessPartnerID ? `<p class="text-gray-600 text-sm mt-1">S/4HANA BP ID: ${s.s4hanaBusinessPartnerID}</p>` : ''}
+                    ${s.s4hanaSalesOrderID ? `<p class="text-gray-600 text-sm mt-1">S/4HANA SO ID: ${s.s4hanaSalesOrderID}</p>` : ''}
+                    ${documentsHtml}
+                </div>
+                <div class="mt-4 md:mt-0">${actionButton}</div>
+            </div>`;
+        }).join('');
+      } else {
+        subscriptionList.innerHTML = '<p class="text-gray-500 text-center">You have no active subscriptions.</p>';
+      }
+
+      document.querySelectorAll('.pay-deposit-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          const subscriptionId = e.target.getAttribute('data-id');
+          showProcessingOverlay();
+          try {
+            const businessPartner = await ApiService.createS4BusinessPartner(state.selectedTravelerId);
+            await ApiService.updateSubscriptionStatus(subscriptionId, 'Confirmed', businessPartner.value.BusinessPartner, 'SO' + Math.floor(Math.random() * 1000000));
+            hideProcessingOverlay();
+            showMessage("Payment confirmed and subscription updated!");
+            renderManageSubscriptions();
+          } catch (error) {
+            hideProcessingOverlay();
+            console.error("Failed to process payment:", error);
+            showMessage("An error occurred while processing payment. Please try again.");
+          }
+        });
+      });
+    }
+
+    async function renderManageTravelers() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Manage Travelers</h2>
+        <div id="traveler-list-container" class="ui5-card p-6 non-clickable">
+            <p class="text-gray-500">Loading traveler data...</p>
+        </div>
+      `;
+
+      const [travelers, subscriptions, documents, courses] = await Promise.all([
+        ApiService.getTravelers().then(r => r.value),
+        ApiService.getSubscriptions().then(r => r.value),
+        ApiService.getSubmittedDocuments().then(r => r.value),
+        ApiService.getCourses().then(r => r.value)
+      ]);
+
+      const travelerListContainer = document.getElementById('traveler-list-container');
+      const allCourseIds = [...new Set(subscriptions.map(s => s.course_ID))];
+      const requiredDocsResults = await Promise.all(allCourseIds.map(courseId => ApiService.getRequiredDocuments(courseId)));
+      const requiredDocsMap = allCourseIds.reduce((acc, courseId, index) => {
+        acc[courseId] = requiredDocsResults[index]?.value || [];
+        return acc;
+      }, {});
+
+      if (travelers.length > 0) {
+        travelerListContainer.innerHTML = `
+          <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                  <tr>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscriptions</th>
+                  </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                  ${travelers.map(traveler => {
+          const travelerSubs = subscriptions.filter(s => s.traveler_ID === traveler.ID);
+          const subsHtml = travelerSubs.length > 0 ? travelerSubs.map(sub => {
+            const course = courses.find(c => c.ID === sub.course_ID);
+            const allRequiredDocs = requiredDocsMap[sub.course_ID] || [];
+            const relevantDocs = documents.filter(d => d.subscription_ID === sub.ID);
+            // console.log("Relevant Documents for Subscription", sub.ID, ":", relevantDocs);
+
+            let actionButton = '';
+            if (sub.status === 'DocsPending' || sub.status === 'DocsChecking' || sub.status === 'ActionRequired') {
+              actionButton = `<button data-id="${sub.ID}" class="action-button ui5-button bg-gray-200 text-gray-800 hover:bg-gray-300 approve-docs-btn text-xs py-1 px-3 rounded-md">Approve Docs</button>`;
+            } else if (sub.status === 'DepositPending') {
+              actionButton = `<button data-id="${sub.ID}" class="action-button ui5-button bg-gray-200 text-gray-800 hover:bg-gray-300 approve-payment-btn text-xs py-1 px-3 rounded-md">Approve Payment</button>`;
+            }
+            const documentsHtml = allRequiredDocs.length > 0 ? `
+                        <div class="mt-2 p-2 bg-gray-100 rounded-md">
+                            <h5 class="font-semibold text-xs mb-1">Document Status</h5>
+                            <ul class="space-y-1 text-xs text-gray-700">
+                                ${allRequiredDocs.map(requiredDoc => {
+              const matchingDoc = relevantDocs.find(d => d.documentType === requiredDoc.documentType);
+              // console.log("Current Required Document:", requiredDoc);
+              console.log("Found Matching Submitted Document:", matchingDoc);
+              const status = matchingDoc ? matchingDoc.status : 'Missing';
+              const statusClass = status === 'Uploaded' ? 'text-green-600' : 'text-red-600';
+              const reviewButtonHtml = (matchingDoc && status === 'Uploaded') ?
+                `<button class="review-doc-btn text-xs text-blue-600 hover:underline ml-auto"
+                                        data-subdocumentid="${matchingDoc.ID}"
+                                        data-documentid="${matchingDoc.documentID}"
+                                        data-filename="${matchingDoc.fileName}"
+                                        data-doctype="${matchingDoc.documentType}"
+                                        data-mimetype="${matchingDoc.mimeType}"
+                                        data-extracteddata='${JSON.stringify(matchingDoc.extractedData)}'
+                                        data-status="${matchingDoc.status}">Review</button>` : '';
+              return `
+                                    <li class="flex items-center justify-between">
+                                        <div>
+                                            <span class="font-medium">${requiredDoc.description}</span>
+                                            <span class="font-bold ${statusClass} ml-1">(${status})</span>
+                                        </div>
+                                        ${reviewButtonHtml}
+                                    </li>`;
+            }).join('')}
+                            </ul>
+                        </div>` : `<p class="text-xs text-gray-500 mt-2">No documents required.</p>`;
+
+            return `
+                        <div class="my-2 p-3 border border-gray-200 rounded-md shadow-sm bg-white">
+                            <div class="flex justify-between items-center mb-2">
+                                <div>
+                                    <p class="text-sm font-medium">${course?.name || 'Unknown Course'}</p>
+                                    <p class="text-xs text-gray-500">Status: ${sub.status}</p>
+                                    <p class="text-xs text-gray-500">ID: ${sub.ID}</p>
+                                    ${sub.s4hanaBusinessPartnerID ? `<p class="text-xs text-gray-500">BP ID: ${sub.s4hanaBusinessPartnerID}</p>` : ''}
+                                    ${sub.s4hanaSalesOrderID ? `<p class="text-xs text-gray-500">SO ID: ${sub.s4hanaSalesOrderID}</p>` : ''}
+                                </div>
+                                ${actionButton}
+                            </div>
+                            ${documentsHtml}
+                        </div>`;
+          }).join('') : `<p class="text-sm text-gray-500">No subscriptions</p>`;
+          return `
+                      <tr>
+                          <td class="px-6 py-4 whitespace-nowrap" data-label="Name">
+                            <div class="text-sm text-gray-900">${traveler.firstName} ${traveler.lastName}</div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap" data-label="Email">
+                            <div class="text-sm text-gray-500">${traveler.email}</div>
+                          </td>
+                          <td class="px-6 py-4" data-label="Subscriptions">
+                            <h4 class="font-semibold text-sm mb-2">📄</h4> 
+                            <div>${subsHtml}</div>
+                          </td>
+                      </tr>`;
+        }).join('')}
+              </tbody>
+          </table>`;
+      } else {
+        travelerListContainer.innerHTML = '<p class="text-gray-500 text-center">No travelers have signed up yet.</p>';
+      }
+
+      document.querySelectorAll('.approve-docs-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          const subscriptionId = e.target.getAttribute('data-id');
+          showProcessingOverlay();
+          try {
+            await ApiService.updateSubscriptionStatus(subscriptionId, 'DepositPending');
+            hideProcessingOverlay();
+            showMessage("Subscription status updated to 'DepositPending'.");
+            renderManageTravelers();
+          } catch (error) {
+            hideProcessingOverlay();
+            console.error("Failed to approve documents:", error);
+            showMessage("An error occurred while approving documents.");
+          }
+        });
+      });
+
+      document.querySelectorAll('.approve-payment-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          const subscriptionId = e.target.getAttribute('data-id');
+          showProcessingOverlay();
+          try {
+            await ApiService.updateSubscriptionStatus(subscriptionId, 'Confirmed', 'BP' + Math.floor(Math.random() * 1000000), 'SO' + Math.floor(Math.random() * 1000000));
+            hideProcessingOverlay();
+            showMessage("Subscription status updated to 'Confirmed'.");
+            renderManageTravelers();
+          } catch (error) {
+            hideProcessingOverlay();
+            console.error("Failed to approve payment:", error);
+            showMessage("An error occurred while approving payment.");
+          }
+        });
+      });
+    }
+
+    async function renderManageCourses() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Manage Courses</h2>
+        <div class="ui5-card p-6 mb-8 non-clickable">
+            <h3 class="text-2xl font-bold mb-4">Create New Course</h3>
+            <form id="create-course-form" class="space-y-4">
+                <input type="text" id="new-course-name" placeholder="Course Name" class="ui5-input w-full" required>
+                <textarea id="new-course-description" placeholder="Description" class="ui5-input w-full" rows="3" required></textarea>
+                <div class="flex space-x-4">
+                    <input type="number" id="new-course-price" placeholder="Price" class="ui5-input w-full" required>
+                    <input type="number" id="new-course-deposit" placeholder="Deposit Amount" class="ui5-input w-full" required>
+                </div>
+                <div class="space-y-2 border-t border-gray-200 pt-4">
+                    <h4 class="font-semibold">Required Documents:</h4>
+                    <div class="flex space-x-2">
+                        <input type="text" id="new-doc-type" placeholder="Doc Type (e.g., ID_CARD)" class="ui5-input w-1/2">
+                        <input type="text" id="new-doc-desc" placeholder="Doc Description" class="ui5-input w-1/2">
+                        <select id="new-doc-type-select" class="ui5-input flex-grow"></select>
+                        <button type="button" id="add-doc-btn" class="ui5-button bg-gray-200 text-gray-800">+</button>
+                    </div>
+                    <ul id="doc-preview" class="list-disc list-inside text-sm pl-5"></ul>
+                </div>
+                <button type="submit" class="ui5-button ui5-button-primary w-full">Save New Course</button>
+            </form>
+        </div>
+        <div class="ui5-card p-6 non-clickable">
+            <h3 class="text-2xl font-bold mb-4">Existing Courses</h3>
+            <div id="existing-courses-list" class="space-y-4">
+                <p class="text-gray-500">Loading courses...</p>
+            </div>
+        </div>
+      `;
+
+      let docsToCreate = [];
+      const docPreviewList = document.getElementById('doc-preview');
+      const docTypeSelect = document.getElementById('new-doc-type-select');
+
+      const activeSchemas = state.schemaDocuments.filter(schema =>
+        schema.versions && schema.versions.some(version => version.isActive === true)
+      );
+
+      // Populate document type dropdown
+      if (activeSchemas.length > 0) {
+        activeSchemas.forEach(schema => {
+          console.log("Active schema found:", schema.versions[0].ID);
+          const option = document.createElement('option');
+          option.textContent = schema.name || schema.documentType_ID;
+          option.value = schema.versions[0].ID;
+          docTypeSelect.appendChild(option);
+        });
+      } else {
+        docTypeSelect.innerHTML = '<option value="">No active document types found</option>';
+      }
+
+      document.getElementById('add-doc-btn').addEventListener('click', () => {
+        const docType = document.getElementById('new-doc-type').value;
+        const docDesc = document.getElementById('new-doc-desc').value;
+        const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+        if (docType && docDesc) {
+          docsToCreate.push({
+            documentType: docType,
+            description: docDesc,
+            documentTypeSchemaID: selectedOption.value
+          });
+          const li = document.createElement('li');
+          li.textContent = `${docDesc} (${docType}) - ${selectedOption.textContent} (${selectedOption.value})`;
+          docPreviewList.appendChild(li);
+          document.getElementById('new-doc-type').value = '';
+          document.getElementById('new-doc-desc').value = '';
+        }
+      });
+
+      document.getElementById('create-course-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('new-course-name').value;
+        const description = document.getElementById('new-course-description').value;
+        const price = parseFloat(document.getElementById('new-course-price').value);
+        const deposit = parseFloat(document.getElementById('new-course-deposit').value);
+
+        if (name && description && !isNaN(price) && !isNaN(deposit)) {
+          showProcessingOverlay();
+          try {
+            const createdCourse = await ApiService.createCourse({
+              name,
+              description,
+              price,
+              depositAmount: deposit,
+              requiredDocuments: docsToCreate
+            });
+            hideProcessingOverlay();
+            showMessage(`Course "${createdCourse.value.name}" created successfully!`);
+            renderManageCourses();
+          } catch (error) {
+            hideProcessingOverlay();
+            console.error("Failed to create course:", error);
+            showMessage("An error occurred while creating the course.");
+          }
+        } else {
+          showMessage("Please fill out all fields correctly.");
+        }
+      });
+
+      const coursesData = await ApiService.getCourses();
+      const existingCoursesList = document.getElementById('existing-courses-list');
+      if (coursesData.value.length > 0) {
+        existingCoursesList.innerHTML = coursesData.value.map(course => `
+          <div class="p-4 border rounded-md">
+              <h4 class="font-bold text-lg">${course.name}</h4>
+              <p class="text-gray-600 text-sm">${course.description}</p>
+          </div>
+        `).join('');
+      } else {
+        existingCoursesList.innerHTML = '<p class="text-gray-500 text-center">No courses have been created yet.</p>';
+      }
+    }
+
+    async function renderMyProfile() {
+      const container = document.getElementById('app-container');
+      const travelerId = state.selectedTravelerId;
+
+      if (!travelerId) {
+        container.innerHTML = `<p class="text-red-500">Please select a traveler from the dropdown.</p>`;
+        return;
+      }
+
+      showProcessingOverlay();
+      try {
+        const traveler = await ApiService.getTraveler(travelerId);
+        hideProcessingOverlay();
+
+        const travelerData = traveler.value;
+        container.innerHTML = `
+          <h2 class="text-3xl font-bold text-gray-900 mb-8">My Profile</h2>
+          <div class="ui5-card p-6 non-clickable">
+              <h3 class="text-2xl font-bold mb-4">Traveler Details</h3>
+              <form id="profile-form" class="space-y-4">
+                  <div>
+                      <label for="profile-first-name" class="block text-sm font-medium text-gray-700">First Name</label>
+                      <input type="text" id="profile-first-name" class="ui5-input w-full mt-1" value="${travelerData.firstName || ''}" required>
+                  </div>
+                  <div>
+                      <label for="profile-last-name" class="block text-sm font-medium text-gray-700">Last Name</label>
+                      <input type="text" id="profile-last-name" class="ui5-input w-full mt-1" value="${travelerData.lastName || ''}" required>
+                  </div>
+                  <div>
+                      <label for="profile-email" class="block text-sm font-medium text-gray-700">Email</label>
+                      <input type="email" id="profile-email" class="ui5-input w-full mt-1" value="${travelerData.email || ''}" required>
+                  </div>
+                  <button type="submit" class="ui5-button ui5-button-primary w-full">Save Changes</button>
+              </form>
+          </div>
+        `;
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const updatedData = {
+            firstName: document.getElementById('profile-first-name').value,
+            lastName: document.getElementById('profile-last-name').value,
+            email: document.getElementById('profile-email').value,
+          };
+          showProcessingOverlay();
+          try {
+            await ApiService.updateTraveler(travelerId, updatedData);
+            hideProcessingOverlay();
+            showMessage('Profile updated successfully!');
+            // Re-render to show changes and update dropdown
+            const travelerSelect = document.getElementById('traveler-select');
+            const selectedOption = travelerSelect.options[travelerSelect.selectedIndex];
+            selectedOption.textContent = `${updatedData.firstName} ${updatedData.lastName}`;
+          } catch (error) {
+            hideProcessingOverlay();
+            console.error("Failed to update profile:", error);
+            showMessage("An error occurred while saving profile changes.");
+          }
+        });
+
+      } catch (error) {
+        hideProcessingOverlay();
+        console.error("Failed to fetch traveler profile:", error);
+        container.innerHTML = `<p class="text-red-500">Failed to load profile data. Please try again.</p>`;
+      }
+    }
+
+
+    // This function replaces the old renderManageTravelers function entirely.
+    async function renderAdminManageTravelers() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Manage Travelers</h2>
+
+        <div class="ui5-card p-6 mb-8 non-clickable">
+            <h3 class="text-2xl font-bold mb-4">Add New Traveler</h3>
+            <form id="new-traveler-form" class="space-y-4">
+                <p class="text-sm text-gray-600">Option 1: Manually enter traveler details.</p>
+                <div class="flex space-x-4">
+                    <input type="text" id="new-traveler-first-name" placeholder="First Name" class="ui5-input w-1/2" required>
+                    <input type="text" id="new-traveler-last-name" placeholder="Last Name" class="ui5-input w-1/2" required>
+                </div>
+                <input type="email" id="new-traveler-email" placeholder="Email" class="ui5-input w-full" required>
+                
+                <p class="text-center text-gray-500">or</p>
+
+                <p class="text-sm text-gray-600">Option 2: Extract data from a biometric ID image.</p>
+                <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                    <input type="file" id="biometric-id-upload" class="ui5-input flex-grow">
+                    <button type="button" id="process-biometric-btn" class="ui5-button ui5-button-primary flex-none">Extract Data</button>
+                </div>
+
+                <div id="extraction-status" class="mt-2 text-sm text-gray-700 hidden"></div>
+                <div id="processing-spinner" class="spinner mx-auto hidden"></div>
+
+                <button type="submit" class="ui5-button ui5-button-primary w-full mt-4">Save New Traveler</button>
+            </form>
+        </div>
+
+        <div class="ui5-card p-6 non-clickable">
+            <h3 class="text-2xl font-bold mb-4">Existing Travelers</h3>
+            <div id="traveler-list-container">
+                <p class="text-gray-500">Loading traveler data...</p>
+            </div>
+        </div>
+      `;
+
+      // Event listener for biometric ID upload and process
+      document.getElementById('process-biometric-btn').addEventListener('click', async () => {
+        const fileInput = document.getElementById('biometric-id-upload');
+        if (!fileInput.files.length) {
+          showMessage("Please select a file to upload.");
+          return;
+        }
+        const file = fileInput.files[0];
+        const statusDiv = document.getElementById('extraction-status');
+        const spinner = document.getElementById('processing-spinner');
+
+        statusDiv.textContent = 'Uploading file...';
+        statusDiv.classList.remove('hidden');
+        spinner.classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+          const uploadResponse = await fetch('/upload', { method: 'POST', body: formData });
+          if (!uploadResponse.ok) throw new Error(`Upload failed with status ${uploadResponse.status}`);
+          const uploadData = await uploadResponse.json();
+          const documentID = uploadData.ID;
+
+          statusDiv.textContent = 'File uploaded. Processing document...';
+
+          const processResponse = await fetch('/process-document', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ documentTypeId: "ID_CARD_AI_SCHEMA_ID_FOR_DEMO", fileId: documentID })
+          });
+          if (!processResponse.ok) throw new Error(`Processing failed with status ${processResponse.status}`);
+
+          // Wait for processing to complete and get OCR/text response
+          // In a real app, you'd poll an endpoint for status, but for this demo, we can just call the OCR/text endpoints
+          await new Promise(resolve => setTimeout(resolve, 5000)); // Simulate processing time
+
+          const [ocrResponse, textResponse] = await Promise.all([
+            ApiService.getOcrResponse(documentID),
+            ApiService.getTextResponse(documentID)
+          ]);
+
+          const textValue = textResponse.value;
+          const extractedData = ocrResponse.ocrResponse.result[0].extractedData;
+
+          // Assuming extractedData has firstName, lastName, email
+          document.getElementById('new-traveler-first-name').value = extractedData.firstName || '';
+          document.getElementById('new-traveler-last-name').value = extractedData.lastName || '';
+          document.getElementById('new-traveler-email').value = extractedData.email || '';
+
+          statusDiv.textContent = 'Data extracted and loaded into form!';
+          spinner.classList.add('hidden');
+          showMessage("Document data extracted successfully!");
+
+        } catch (error) {
+          console.error("Biometric data extraction failed:", error);
+          statusDiv.textContent = 'Error during data extraction. Please try manual entry.';
+          spinner.classList.add('hidden');
+          showMessage("Error: " + error.message);
+        }
+      });
+
+      // Event listener for form submission (create new traveler)
+      document.getElementById('new-traveler-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const travelerData = {
+          firstName: document.getElementById('new-traveler-first-name').value,
+          lastName: document.getElementById('new-traveler-last-name').value,
+          email: document.getElementById('new-traveler-email').value
+        };
+        showProcessingOverlay();
+        try {
+          await ApiService.createTraveler(travelerData);
+          hideProcessingOverlay();
+          showMessage('New traveler created successfully!');
+          document.getElementById('new-traveler-form').reset();
+          renderAdminManageTravelers(); // Re-render the page to update the list
+        } catch (error) {
+          hideProcessingOverlay();
+          console.error("Failed to create traveler:", error);
+          showMessage("An error occurred while creating the traveler.");
+        }
+      });
+
+      // Re-use the logic for rendering the existing travelers list
+      const [travelers, subscriptions, documents, courses] = await Promise.all([
+        ApiService.getTravelers().then(r => r.value),
+        ApiService.getSubscriptions().then(r => r.value),
+        ApiService.getSubmittedDocuments().then(r => r.value),
+        ApiService.getCourses().then(r => r.value)
+      ]);
+
+      const travelerListContainer = document.getElementById('traveler-list-container');
+      const allCourseIds = [...new Set(subscriptions.map(s => s.course_ID))];
+      const requiredDocsResults = await Promise.all(allCourseIds.map(courseId => ApiService.getRequiredDocuments(courseId)));
+      const requiredDocsMap = allCourseIds.reduce((acc, courseId, index) => {
+        acc[courseId] = requiredDocsResults[index]?.value || [];
+        return acc;
+      }, {});
+
+      if (travelers.length > 0) {
+        travelerListContainer.innerHTML = `
+          <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                  <tr>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscriptions</th>
+                  </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                  ${travelers.map(traveler => {
+          const travelerSubs = subscriptions.filter(s => s.traveler_ID === traveler.ID);
+          const subsHtml = travelerSubs.length > 0 ? travelerSubs.map(sub => {
+            const course = courses.find(c => c.ID === sub.course_ID);
+            const allRequiredDocs = requiredDocsMap[sub.course_ID] || [];
+            const relevantDocs = documents.filter(d => d.subscription_ID === sub.ID);
+            let actionButton = '';
+            if (sub.status === 'DocsPending' || sub.status === 'DocsChecking' || sub.status === 'ActionRequired') {
+              actionButton = `<button data-id="${sub.ID}" class="action-button ui5-button bg-gray-200 text-gray-800 hover:bg-gray-300 approve-docs-btn text-xs py-1 px-3 rounded-md">Approve Docs</button>`;
+            } else if (sub.status === 'DepositPending') {
+              actionButton = `<button data-id="${sub.ID}" class="action-button ui5-button bg-gray-200 text-gray-800 hover:bg-gray-300 approve-payment-btn text-xs py-1 px-3 rounded-md">Approve Payment</button>`;
+            }
+            const documentsHtml = allRequiredDocs.length > 0 ? `
+                        <div class="mt-2 p-2 bg-gray-100 rounded-md">
+                            <h5 class="font-semibold text-xs mb-1">Document Status</h5>
+                            <ul class="space-y-1 text-xs text-gray-700">
+                                ${allRequiredDocs.map(requiredDoc => {
+              const matchingDoc = relevantDocs.find(d => d.documentType === requiredDoc.documentType);
+              const status = matchingDoc ? matchingDoc.status : 'Missing';
+              const statusClass = status === 'Uploaded' ? 'text-green-600' : 'text-red-600';
+              const reviewButtonHtml = (matchingDoc && status === 'Uploaded') ?
+                `<button class="review-doc-btn text-xs text-blue-600 hover:underline ml-auto"
+                                        data-subdocumentid="${matchingDoc.ID}"
+                                        data-documentid="${matchingDoc.documentID}"
+                                        data-filename="${matchingDoc.fileName}"
+                                        data-doctype="${matchingDoc.documentType}"
+                                        data-mimetype="${matchingDoc.mimeType}"
+                                        data-extracteddata='${JSON.stringify(matchingDoc.extractedData)}'
+                                        data-status="${matchingDoc.status}">Review</button>` : '';
+              return `
+                                    <li class="flex items-center justify-between">
+                                        <div>
+                                            <span class="font-medium">${requiredDoc.description}</span>
+                                            <span class="font-bold ${statusClass} ml-1">(${status})</span>
+                                        </div>
+                                        ${reviewButtonHtml}
+                                    </li>`;
+            }).join('')}
+                            </ul>
+                        </div>` : `<p class="text-xs text-gray-500 mt-2">No documents required.</p>`;
+
+            return `
+                        <div class="my-2 p-3 border border-gray-200 rounded-md shadow-sm bg-white">
+                            <div class="flex justify-between items-center mb-2">
+                                <div>
+                                    <p class="text-sm font-medium">${course?.name || 'Unknown Course'}</p>
+                                    <p class="text-xs text-gray-500">Status: ${sub.status}</p>
+                                    <p class="text-xs text-gray-500">ID: ${sub.ID}</p>
+                                    ${sub.s4hanaBusinessPartnerID ? `<p class="text-xs text-gray-500">BP ID: ${sub.s4hanaBusinessPartnerID}</p>` : ''}
+                                    ${sub.s4hanaSalesOrderID ? `<p class="text-xs text-gray-500">SO ID: ${sub.s4hanaSalesOrderID}</p>` : ''}
+                                </div>
+                                ${actionButton}
+                            </div>
+                            ${documentsHtml}
+                        </div>`;
+          }).join('') : `<p class="text-sm text-gray-500">No subscriptions</p>`;
+          return `
+                      <tr>
+                          <td class="px-6 py-4 whitespace-nowrap" data-label="Name">
+                            <div class="text-sm text-gray-900">${traveler.firstName} ${traveler.lastName}</div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap" data-label="Email">
+                            <div class="text-sm text-gray-500">${traveler.email}</div>
+                          </td>
+                          <td class="px-6 py-4" data-label="Subscriptions">
+                            <h4 class="font-semibold text-sm mb-2">📄</h4> 
+                            <div>${subsHtml}</div>
+                          </td>
+                      </tr>`;
+        }).join('')}
+              </tbody>
+          </table>`;
+      } else {
+        travelerListContainer.innerHTML = '<p class="text-gray-500 text-center">No travelers have signed up yet.</p>';
+      }
+
+      document.querySelectorAll('.approve-docs-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          const subscriptionId = e.target.getAttribute('data-id');
+          showProcessingOverlay();
+          try {
+            await ApiService.updateSubscriptionStatus(subscriptionId, 'DepositPending');
+            hideProcessingOverlay();
+            showMessage("Subscription status updated to 'DepositPending'.");
+            renderAdminManageTravelers();
+          } catch (error) {
+            hideProcessingOverlay();
+            console.error("Failed to approve documents:", error);
+            showMessage("An error occurred while approving documents.");
+          }
+        });
+      });
+
+      document.querySelectorAll('.approve-payment-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          const subscriptionId = e.target.getAttribute('data-id');
+          showProcessingOverlay();
+          try {
+            await ApiService.updateSubscriptionStatus(subscriptionId, 'Confirmed', 'BP' + Math.floor(Math.random() * 1000000), 'SO' + Math.floor(Math.random() * 1000000));
+            hideProcessingOverlay();
+            showMessage("Subscription status updated to 'Confirmed'.");
+            renderAdminManageTravelers();
+          } catch (error) {
+            hideProcessingOverlay();
+            console.error("Failed to approve payment:", error);
+            showMessage("An error occurred while approving payment.");
+          }
+        });
+      });
+    }
+
+    async function renderAdminManageSubscriptions() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Manage Subscriptions</h2>
+        <div class="ui5-card p-6 mb-8 non-clickable">
+            <h3 class="text-2xl font-bold mb-4">Filter Subscriptions</h3>
+            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 items-center">
+                <span class="text-sm text-gray-700">Filter by Traveler:</span>
+                <select id="traveler-filter-select" class="ui5-input w-full md:w-auto">
+                    <option value="">All Travelers</option>
+                </select>
+            </div>
+        </div>
+        <div id="subscriptions-list-container" class="space-y-6">
+            <p class="text-gray-500">Loading subscriptions...</p>
+        </div>
+      `;
+
+      showProcessingOverlay();
+      try {
+        const [subscriptions, travelers, submittedDocs, courses, openDocs] = await Promise.all([
+          ApiService.getSubscriptions().then(r => r.value),
+          ApiService.getTravelers().then(r => r.value),
+          ApiService.getSubmittedDocuments().then(r => r.value),
+          ApiService.getCourses().then(r => r.value),
+          ApiService.getOpenDocuments(),
+        ]);
+        hideProcessingOverlay();
+
+        const travelerFilterSelect = document.getElementById('traveler-filter-select');
+        travelers.forEach(traveler => {
+          const option = document.createElement('option');
+          option.value = traveler.ID;
+          option.textContent = `${traveler.firstName} ${traveler.lastName}`;
+          travelerFilterSelect.appendChild(option);
+        });
+
+        const subscriptionsListContainer = document.getElementById('subscriptions-list-container');
+        const documentDataCache = {};
+
+        const renderSubscriptions = (filteredTravelerId) => {
+          const filteredSubscriptions = filteredTravelerId ?
+            subscriptions.filter(s => s.traveler_ID === filteredTravelerId) : subscriptions;
+
+          if (filteredSubscriptions.length === 0) {
+            subscriptionsListContainer.innerHTML = `<p class="text-gray-500 text-center">No subscriptions found.</p>`;
+            return;
+          }
+
+          subscriptionsListContainer.innerHTML = filteredSubscriptions.map(subscription => {
+            const course = courses.find(c => c.ID === subscription.course_ID);
+            const traveler = travelers.find(t => t.ID === subscription.traveler_ID);
+            const subDocs = submittedDocs.filter(d => d.subscription_ID === subscription.ID);
+
+            const submittedDocsHtml = subDocs.map(doc => {
+              const statusClass = doc.status === 'Uploaded' ? 'text-green-600' : 'text-red-600';
+              const isMissing = doc.status === 'Missing';
+// Suggest <i class="activate"></i>
+// Suggest <i class="fas fa magic"></i>
+              const missingDocControls = isMissing ? `
+                <div class="flex flex-col md:flex-row items-center md:space-x-2 mt-2">
+                    <div class="flex items-center space-x-2 w-full md:w-auto mb-2 md:mb-0">
+                        <button type="button" class="ui5-button bg-gray-200 text-sm py-2 px-4 suggest-btn"
+                                data-subdoc-id="${doc.ID}">
+                            <span class="activate"></span>
+                        </button>
+                    </div>
+                    <div class="relative w-full flex items-center space-x-2">
+                        <select class="ui5-input flex-grow assign-doc-select" data-subdoc-id="${doc.ID}">
+                            <option value="">Select a document...</option>
+                            ${openDocs.map(openDoc => `
+                                <option value="${openDoc.ID}" data-schema-id="${openDoc.schemaVersion_ID}" data-document-id="${openDoc.file_ID}">
+                                    ${openDoc.ID.slice(0, 8)} (${openDoc.schemaVersion_ID.slice(0, 8)})
+                                </option>
+                            `).join('')}
+                        </select>
+                        <button type="button" class="ui5-button ui5-button-primary text-sm py-2 px-4 save-btn"
+                                data-subdoc-id="${doc.ID}">
+                            <span class="save"></span>
+                        </button>
+                    </div>
+                </div>
+                <div id="preview-${doc.ID}" class="doc-preview-container mt-4"></div>
+              ` : '';
+
+              const reviewBtn = doc.status === 'Uploaded' ? `
+                 <button class="review-doc-btn text-xs text-blue-600 hover:underline ml-auto"
+                         data-subdocumentid="${doc.ID}"
+                         data-documentid="${doc.documentID}"
+                         data-filename="${doc.fileName}"
+                         data-doctype="${doc.documentType}"
+                         data-mimetype="${doc.mimeType}"
+                         data-extracteddata='${JSON.stringify(doc.extractedData)}'
+                         data-status="${doc.status}">Review</button>
+              ` : '';
+
+              return `
+                <div class="p-3 border rounded-md shadow-sm bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-sm">${doc.documentType}</span>
+                        <span class="font-bold text-xs ${statusClass}">${doc.status}</span>
+                    </div>
+                    ${reviewBtn}
+                    ${isMissing ? `<p class="text-xs text-gray-500 mt-1">ID: ${doc.ID}</p>` : `<p class="text-xs text-gray-500 mt-1">Document ID: ${doc.documentID}</p>`}
+                    ${missingDocControls}
+                </div>
+              `;
+            }).join('');
+
+            return `
+              <div class="ui5-card p-6">
+                  <div class="flex justify-between items-start mb-2">
+                      <div>
+                          <h3 class="text-xl font-bold">${course?.name || 'Unknown Course'}</h3>
+                          <p class="text-gray-600 text-sm">Traveler: ${traveler?.firstName} ${traveler?.lastName}</p>
+                          <p class="text-gray-600 text-sm">Status: <span class="font-semibold p-1 px-2 rounded-md text-white text-xs bg-yellow-400">${subscription.status}</span></p>
+                      </div>
+                  </div>
+                  <div class="mt-4 border-t pt-4 space-y-3">
+                      <h4 class="font-semibold text-lg">Submitted Documents</h4>
+                      ${submittedDocsHtml || `<p class="text-gray-500 text-sm">No documents submitted.</p>`}
+                  </div>
+              </div>
+            `;
+          }).join('');
+
+          attachAdminSubscriptionListeners();
+        };
+
+        const renderInlinePreview = (containerId, data) => {
+          const container = document.getElementById(containerId);
+          if (!container) return;
+
+          const imagePreviewHtml = data.imagePreviewUrl ?
+            `
+              <div class="w-full max-h-96 overflow-y-scroll rounded-md border border-gray-200 shadow-sm mb-4">
+                <img src="${data.imagePreviewUrl}" alt="Document Preview" class="w-full h-auto">
+              </div>
+              ` :
+            `<div class="w-full bg-gray-100 p-4 text-center rounded-md text-gray-500 mb-4">No image preview available.</div>`;
+
+          const extractedTextHtml = data.extractedText || 'No raw text found.';
+
+          const previewHtml = `
+              <div class="p-4 border border-gray-200 rounded-md bg-white">
+                  <h5 class="text-md font-semibold mb-2">Document Preview</h5>
+                  ${imagePreviewHtml}
+                  <details>
+                      <summary class="font-bold text-gray-800 cursor-pointer">Raw Extracted Text</summary>
+                      <div class="p-2 border border-gray-200 mt-2 rounded-md bg-white overflow-y-scroll max-h-48 text-xs font-mono">
+                          <pre class="whitespace-pre-wrap">${extractedTextHtml}</pre>
+                      </div>
+                  </details>
+              </div>
+            `;
+          container.innerHTML = previewHtml;
+        };
+
+        const attachAdminSubscriptionListeners = () => {
+          document.querySelectorAll('.assign-doc-select').forEach(select => {
+            select.addEventListener('change', async (e) => {
+              const selectedOption = e.target.options[e.target.selectedIndex];
+              const subDocId = e.target.dataset.subdocId;
+              const previewContainerId = `preview-${subDocId}`;
+
+              if (!selectedOption.value) {
+                document.getElementById(previewContainerId).innerHTML = ''; // Clear preview
+                return;
+              }
+
+              const docID = selectedOption.dataset.documentId;
+
+              showProcessingOverlay();
+              try {
+                if (!documentDataCache[docID]) {
+                  const [ocrResponse, textResponse] = await Promise.all([
+                    ApiService.getOcrResponse(docID),
+                    ApiService.getTextResponse(docID)
+                  ]);
+                  documentDataCache[docID] = {
+                    ocr: ocrResponse,
+                    text: textResponse.value
+                  };
+                }
+                hideProcessingOverlay();
+
+                const extractedData = documentDataCache[docID].ocr?.ocrResponse?.result?.[0]?.extractedData;
+                const extractedText = documentDataCache[docID].text;
+                const imageData = documentDataCache[docID].ocr?.ocrResponse?.images?.[0];
+                const imagePreviewUrl = imageData ? `data:image/jpeg;base64,${imageData}` : null;
+
+                renderInlinePreview(previewContainerId, {
+                  extractedData,
+                  extractedText,
+                  imagePreviewUrl
+                });
+
+              } catch (error) {
+                hideProcessingOverlay();
+                console.error("Failed to fetch document preview:", error);
+                document.getElementById(previewContainerId).innerHTML = `<div class="p-4 bg-red-100 text-red-600 rounded-md">Failed to load preview.</div>`;
+              }
+            });
+          });
+
+          document.querySelectorAll('.suggest-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+              const subDocId = e.target.dataset.subdocId;
+              const subDoc = submittedDocs.find(d => d.ID === subDocId);
+              const subscription = subscriptions.find(s => s.ID === subDoc.subscription_ID);
+              const traveler = travelers.find(t => t.ID === subscription.traveler_ID);
+              const previewContainerId = `preview-${subDocId}`;
+
+              e.target.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
+
+              let suggestedDoc = null;
+              let matchReason = '';
+
+              showProcessingOverlay();
+              for (const openDoc of openDocs) {
+                const docID = openDoc.file_ID;
+                if (!documentDataCache[docID]) {
+                  try {
+                    const [ocrResponse, textResponse] = await Promise.all([
+                      ApiService.getOcrResponse(docID),
+                      ApiService.getTextResponse(docID)
+                    ]);
+                    documentDataCache[docID] = {
+                      ocr: ocrResponse,
+                      text: textResponse.value
+                    };
+                  } catch (error) {
+                    console.error("Failed to fetch data for document", docID, error);
+                    continue;
+                  }
+                }
+
+                const extractedText = documentDataCache[docID].text?.toLowerCase() || '';
+                const firstName = traveler.firstName?.toLowerCase();
+                const lastName = traveler.lastName?.toLowerCase();
+                const email = traveler.email?.toLowerCase();
+
+                if (firstName && extractedText.includes(firstName) && lastName && extractedText.includes(lastName) && email && extractedText.includes(email)) {
+                  suggestedDoc = openDoc;
+                  matchReason = `Match found based on traveler's full name and email.`;
+                  break;
+                } else if (firstName && extractedText.includes(firstName) && lastName && extractedText.includes(lastName)) {
+                  suggestedDoc = openDoc;
+                  matchReason = `Match found based on traveler's full name.`;
+                  break;
+                } else if (email && extractedText.includes(email)) {
+                  suggestedDoc = openDoc;
+                  matchReason = `Match found based on traveler's email.`;
+                  break;
+                }
+              }
+
+              // e.target.innerHTML = 'Suggest <i class="fas fa-magic"></i>';
+              e.target.innerHTML = '<span class="activate"></span>';
+              hideProcessingOverlay();
+
+              if (suggestedDoc) {
+                const selectElement = document.querySelector(`.assign-doc-select[data-subdoc-id="${subDocId}"]`);
+                selectElement.value = suggestedDoc.ID;
+
+                const extractedData = documentDataCache[suggestedDoc.file_ID].ocr?.ocrResponse?.result?.[0]?.extractedData;
+                const extractedText = documentDataCache[suggestedDoc.file_ID].text;
+                const imageData = documentDataCache[suggestedDoc.file_ID].ocr?.ocrResponse?.images?.[0];
+                const imagePreviewUrl = imageData ? `data:image/jpeg;base64,${imageData}` : null;
+
+                renderInlinePreview(previewContainerId, {
+                  extractedData,
+                  extractedText,
+                  imagePreviewUrl
+                });
+
+                showMessage(`Suggested Document: ${matchReason}`);
+              } else {
+                showMessage("No matching document could be suggested.");
+              }
+            });
+          });
+
+          document.querySelectorAll('.save-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+              const subDocId = e.target.dataset.subdocId;
+              const selectElement = document.querySelector(`.assign-doc-select[data-subdoc-id="${subDocId}"]`);
+              const selectedOption = selectElement.options[selectElement.selectedIndex];
+
+              if (!selectedOption.value) {
+                showMessage("Please select a document to save.");
+                return;
+              }
+
+              const openDocId = selectedOption.value;
+              const docID = selectedOption.dataset.documentId;
+              const schemaID = selectedOption.dataset.schemaId;
+
+              showProcessingOverlay();
+
+              if (!documentDataCache[docID] || !documentDataCache[docID].ocr || !documentDataCache[docID].ocr.ocrResponse) {
+                try {
+                  const [ocrResponse, textResponse] = await Promise.all([
+                    ApiService.getOcrResponse(docID),
+                    ApiService.getTextResponse(docID)
+                  ]);
+                  documentDataCache[docID] = {
+                    ocr: ocrResponse,
+                    text: textResponse.value
+                  };
+                } catch (error) {
+                  hideProcessingOverlay();
+                  console.error("Failed to fetch document data for saving:", error);
+                  showMessage("Failed to retrieve document data. Cannot save.");
+                  return;
+                }
+              }
+
+              const updatePayload = {
+                status: "Uploaded",
+                documentID: docID,
+                documentTypeSchemaID: schemaID,
+                extractedData: JSON.stringify(documentDataCache[docID].ocr.ocrResponse.result[0].extractedData)
+              };
+
+              try {
+                await ApiService.updateSubmittedDocuments(subDocId, updatePayload.status, updatePayload.documentID, updatePayload.extractedData);
+
+                const subDocToUpdate = submittedDocs.find(d => d.ID === subDocId);
+                Object.assign(subDocToUpdate, updatePayload);
+                subDocToUpdate.documentID = docID;
+
+                hideProcessingOverlay();
+                showMessage("Document assigned and saved successfully!");
+                renderAdminManageSubscriptions();
+              } catch (error) {
+                hideProcessingOverlay();
+                console.error("Failed to save document assignment:", error);
+                showMessage("Failed to save document assignment.");
+              }
+            });
+          });
+        };
+
+        travelerFilterSelect.addEventListener('change', (e) => {
+          renderSubscriptions(e.target.value);
+        });
+
+        renderSubscriptions('');
+
+      } catch (error) {
+        hideProcessingOverlay();
+        console.error("Failed to load admin subscriptions page:", error);
+        container.innerHTML = `<p class="text-red-500">Failed to load data. Please check the console for details.</p>`;
+      }
+    }
+
+    async function renderAdminPendingDocuments() {
+      const container = document.getElementById('app-container');
+      container.innerHTML = `
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Pending Documents for Review</h2>
+        <div id="pending-docs-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <p class="text-gray-500 text-center col-span-full">Loading documents...</p>
+        </div>
+      `;
+
+      showProcessingOverlay();
+      try {
+        const pendingDocs = await ApiService.getOpenDocuments();
+
+        if (pendingDocs.length === 0) {
+          container.innerHTML = `<h2 class="text-3xl font-bold text-gray-900 mb-8">Pending Documents for Review</h2><p class="text-gray-500 text-center">No documents are currently pending review.</p>`;
+          hideProcessingOverlay();
+          return;
+        }
+
+        const pendingDocsContainer = document.getElementById('pending-docs-container');
+        pendingDocsContainer.innerHTML = ''; // Clear loading message
+
+        const docDataPromises = pendingDocs.map(async doc => {
+          try {
+            const [ocrResponse, textResponse] = await Promise.all([
+              ApiService.getOcrResponse(doc.file_ID),
+              ApiService.getTextResponse(doc.file_ID)
+            ]);
+
+            const extractedData = ocrResponse?.ocrResponse?.result?.[0]?.extractedData;
+            const extractedText = textResponse?.value;
+            const imageData = ocrResponse?.ocrResponse?.images?.[0];
+            const imagePreviewUrl = imageData ? `data:image/jpeg;base64,${imageData}` : null;
+
+            return {
+              ...doc,
+              extractedOcrData: extractedData,
+              extractedText: extractedText,
+              imagePreviewUrl: imagePreviewUrl,
+              fetchError: null
+            };
+          } catch (error) {
+            console.error(`Failed to fetch data for document ${doc.ID}:`, error);
+            return {
+              ...doc,
+              extractedOcrData: null,
+              extractedText: null,
+              imagePreviewUrl: null,
+              fetchError: 'Failed to load data.'
+            };
+          }
+        });
+
+        const allDocsWithData = await Promise.all(docDataPromises);
+
+        allDocsWithData.forEach(doc => {
+          const imagePreviewHtml = doc.imagePreviewUrl ?
+            `
+            <div class="w-full max-h-96 overflow-y-scroll rounded-md border border-gray-200 shadow-sm mb-4">
+              <img src="${doc.imagePreviewUrl}" alt="Document Preview" class="w-full h-auto">
+            </div>
+            ` :
+            `<div class="w-full bg-gray-100 p-4 text-center rounded-md text-gray-500 mb-4">No image preview available.</div>`;
+
+          const extractedTextHtml = doc.extractedText || 'No raw text found.';
+
+          const cardHtml = `
+            <div class="ui5-card p-4">
+              <h3 class="font-bold text-lg mb-2 truncate" title="ID: ${doc.ID}">Document ID: ${doc.ID.slice(0, 8)}...</h3>
+              <div class="space-y-1 text-sm text-gray-600 border-b pb-2 mb-2">
+                <p><strong>File ID:</strong> ${doc.file_ID}</p>
+                <p><strong>Status:</strong> <span class="font-semibold text-yellow-500">${doc.status}</span></p>
+                <p><strong>Schema ID:</strong> ${doc.schemaVersion_ID.slice(0, 8)}...</p>
+              </div>
+
+              ${imagePreviewHtml}
+
+              <details>
+                <summary class="font-bold text-gray-800 cursor-pointer">Raw Extracted Text</summary>
+                <div class="p-2 border border-gray-200 mt-2 rounded-md bg-white overflow-y-scroll max-h-48 text-xs font-mono">
+                  <pre class="whitespace-pre-wrap">${extractedTextHtml}</pre>
+                </div>
+              </details>
+            </div>
+          `;
+          pendingDocsContainer.insertAdjacentHTML('beforeend', cardHtml);
+        });
+
+      } catch (error) {
+        console.error("Failed to load pending documents:", error);
+        container.innerHTML = `<h2 class="text-3xl font-bold text-gray-900 mb-8">Pending Documents for Review</h2><p class="text-red-500 text-center">Failed to load documents. Please try again.</p>`;
+      } finally {
+        hideProcessingOverlay();
+      }
+    }
+
+    // --- NAVIGATION AND MAIN APP INITIALIZATION ---
+
+    function setupEventListeners() {
+      document.getElementById('nav-courses-btn').addEventListener('click', () => {
+        document.getElementById('traveler-dropdown').classList.add('hidden');
+        document.getElementById('admin-dropdown').classList.add('hidden');
+        renderCoursesCatalog();
+      });
+
+      // New event listeners for the Traveler dropdown
+      document.getElementById('nav-traveler-btn').addEventListener('click', () => {
+        document.getElementById('traveler-dropdown').classList.toggle('hidden');
+        document.getElementById('admin-dropdown').classList.add('hidden');
+      });
+      document.getElementById('nav-my-profile-btn').addEventListener('click', () => {
+        document.getElementById('traveler-dropdown').classList.add('hidden');
+        renderMyProfile();
+      });
+      document.getElementById('nav-subscriptions-btn').addEventListener('click', () => {
+        document.getElementById('traveler-dropdown').classList.add('hidden');
+        renderManageSubscriptions();
+      });
+
+      // Updated Admin dropdown listeners
+      document.getElementById('nav-admin-btn').addEventListener('click', () => {
+        document.getElementById('admin-dropdown').classList.toggle('hidden');
+        document.getElementById('traveler-dropdown').classList.add('hidden');
+      });
+      document.getElementById('nav-admin-manage-travelers-btn').addEventListener('click', () => {
+        document.getElementById('admin-dropdown').classList.add('hidden');
+        renderAdminManageTravelers();
+      });
+      document.getElementById('nav-admin-courses-btn').addEventListener('click', () => {
+        document.getElementById('admin-dropdown').classList.add('hidden');
+        renderManageCourses();
+      });
+      document.getElementById('nav-admin-manage-subscriptions-btn').addEventListener('click', () => {
+        document.getElementById('admin-dropdown').classList.add('hidden');
+        renderAdminManageSubscriptions();
+      });
+      document.getElementById('nav-admin-pending-docs-btn').addEventListener('click', () => {
+        document.getElementById('admin-dropdown').classList.add('hidden');
+        renderAdminPendingDocuments();
+      });
+
+      // Close dropdowns when clicking anywhere else on the body
+      document.body.addEventListener('click', (e) => {
+        if (!e.target.closest('#nav-traveler-btn') && !e.target.closest('#traveler-dropdown')) {
+          document.getElementById('traveler-dropdown').classList.add('hidden');
+        }
+        if (!e.target.closest('#nav-admin-btn') && !e.target.closest('#admin-dropdown')) {
+          document.getElementById('admin-dropdown').classList.add('hidden');
+        }
+      });
+
+      // Event listener for document review modal close button
+      document.getElementById('doc-modal-close-btn').addEventListener('click', closeDocumentModal);
+
+      document.body.addEventListener('click', function (e) {
+        if (e.target.classList.contains('review-doc-btn')) {
+          const documentID = e.target.dataset.documentid;
+          if (documentID) {
+            showDocumentDetails({
+              ID: e.target.dataset.subdocumentid,
+              documentID: e.target.dataset.documentid,
+              fileName: e.target.dataset.filename,
+              docType: e.target.dataset.doctype,
+              mimeType: e.target.dataset.mimetype,
+              extractedData: e.target.dataset.extracteddata,
+              status: e.target.dataset.status
+            });
+          }
+        }
+      });
+    }
+
+    async function initializeApp() {
+      try {
+        const response = await fetch("/environmentvariables");
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const endpoints = await response.json();
+        console.log("Endpoints received:", endpoints);
+        state.xsuaaTokenCID = endpoints.XSUAA_AUTH_CID;
+        state.xsuaaTokenCSECRET = endpoints.XSUAA_AUTH_CSECRET;
+        state.backendCDSCAPEndpoint = endpoints.BACKEND_CDS_ENDPOINT;
+        state.s4Endpoint = endpoints.S4HANA_ENDPOINT;
+
+        await ApiService.getAccessToken();
+
+        // Fetch document schema types once on app initialization
+        state.schemaDocuments = await ApiService.getSchemaDocuments();
+
+        const travelerSelect = document.getElementById('traveler-select');
+        const travelers = await ApiService.getTravelers();
+        travelers.value.forEach(traveler => {
+          const option = document.createElement('option');
+          option.value = traveler.ID;
+          option.textContent = `${traveler.firstName} ${traveler.lastName}`;
+          travelerSelect.appendChild(option);
+        });
+
+        if (travelers.value.length > 0) {
+          state.selectedTravelerId = travelers.value[0].ID;
+          travelerSelect.value = state.selectedTravelerId;
+        }
+
+        travelerSelect.addEventListener('change', (e) => {
+          state.selectedTravelerId = e.target.value;
+          showMessage(`Switched to traveler: ${e.target.options[e.target.selectedIndex].text}`);
+          // If on a page that depends on the traveler, re-render it
+          if (document.querySelector('#subscription-list')) {
+            renderManageSubscriptions();
+          }
+        });
+
+        setupEventListeners();
+        // renderCoursesCatalog();
+        // renderManageSubscriptions();
+        const urlParams = new URLSearchParams(window.location.search);
+        const navigateTo = urlParams.get('$navigate');
+        const hideHeader = urlParams.get('$hideHeader') === 'true'; // Check for the new parameter
+
+        // Hide the header if the parameter is true
+        if (hideHeader) {
+          document.querySelector('header').classList.add('hidden');
+        } else {
+          document.querySelector('header').classList.remove('hidden');
+        }
+
+        switch (navigateTo) {
+          case 'courses':
+            renderCoursesCatalog();
+            break;
+          case 'subscriptions':
+            renderManageSubscriptions();
+            break;
+          case 'my-profile':
+            renderMyProfile();
+            break;
+          case 'admin-travelers':
+            renderAdminManageTravelers();
+            break;
+          case 'admin-courses':
+            renderManageCourses();
+            break;
+          case 'admin-manage-subscriptions':
+            renderAdminManageSubscriptions();
+            break;
+          case 'admin-pending-docs':
+            renderAdminPendingDocuments();
+            break;
+          default:
+            renderCoursesCatalog();
+            break;
+        }
+
+      } catch (error) {
+        console.error("Failed to initialize the application:", error);
+        showMessage("Application failed to start. Please check the console for errors.");
+        document.getElementById('app-container').innerHTML = `<p class="text-red-500 text-center">Application failed to initialize. Please try refreshing the page.</p>`;
+      }
+    }
+
+    // Initial page render
+    window.onload = initializeApp;
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vertigo Travels</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="antialiased">
+
+  <!-- Header -->
+  <header class="header-main">
+    <div class="container mx-auto flex flex-col md:flex-row justify-between items-center p-4">
+      <h1 class="header-title">Vertigo Travels</h1>
+      <nav class="header-nav">
+        <div class="header-dropdown-container">
+          <span class="text-sm text-gray-300">Switch Traveler:</span>
+          <select id="traveler-select" class="control-input bg-slate-700 text-white border-slate-600 w-full md:w-auto">
+            <!-- Options will be populated by JS -->
+          </select>
+        </div>
+        <button id="nav-courses-btn" class="control-button-secondary">Courses</button>
+        <button id="nav-subscriptions-btn" class="control-button-secondary">My Subscriptions</button>
+        <div class="relative w-full md:w-auto">
+          <button id="nav-admin-btn" class="control-button-secondary">Admin</button>
+          <div id="admin-dropdown" class="admin-dropdown-menu">
+            <button id="nav-admin-travelers-btn" class="admin-dropdown-item">Manage Travelers</button>
+            <button id="nav-admin-courses-btn" class="admin-dropdown-item">Manage Courses</button>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main id="app-container" class="container mx-auto mt-8 p-4">
+    <!-- Content will be dynamically injected here -->
+  </main>
+
+  <!-- Global Modals and Overlays -->
+  <div id="global-overlay" class="overlay hidden"></div>
+  
+  <!-- Custom Message Box -->
+  <div id="message-box" class="message-box hidden">
+    <p id="message-text" class="mb-6 text-center text-gray-700"></p>
+    <button id="message-ok-btn" class="control-button-primary w-full">OK</button>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div id="loading-indicator" class="loading-indicator-container hidden">
+      <div class="loading-spinner"></div>
+      <p class="text-white mt-4">Processing...</p>
+  </div>
+
+  <!-- Admin Document Review Modal -->
+  <div id="review-modal" class="review-modal hidden">
+      <div class="review-modal-content">
+          <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-bold text-gray-800">Review Submitted Document</h3>
+              <button id="review-modal-close-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+          </div>
+          <div id="review-modal-body" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Image Preview and Data will be injected here -->
+          </div>
+      </div>
+  </div>
+
+
+  <!-- Custom JavaScript -->
+  <script src="script.js"></script>
+
+</body>
+
+</html>
