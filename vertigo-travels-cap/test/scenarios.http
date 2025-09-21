@@ -1,0 +1,214 @@
+# @host = http://localhost:4004
+@host = https://sadevmain-dev-vertigo-travels-cap-srv.cfapps.eu10.hana.ondemand.com
+@xsuaaHostname = https://sadevmain.authentication.eu10.hana.ondemand.com
+@btpXsuaaClient = sb-vertigo-travels-cap-sadevmain-dev!t141280
+@btpXsuaaSecret = 342a0798-6f4f-41e2-b0fa-6d82443c5ff8$6_J1qy6yLItutxXD-mQAHq9kzR_Yu_oP2HIjzIq5G5s=
+
+### GET XSUAA TOKEN
+# @name getXsuaaToken
+POST {{xsuaaHostname}}/oauth/token
+Accept: application/json
+Content-Type: application/x-www-form-urlencoded
+
+client_id={{btpXsuaaClient}}
+&client_secret={{btpXsuaaSecret}}
+&grant_type=client_credentials
+
+
+### TOKEN
+@token = {{getXsuaaToken.response.body.$.access_token}}
+# @token = eyJhbGciOiJSUzI1NiIsImprdSI6Imh0dHBzOi8vc2FkZXZtYWluLmF1dGhlbnRpY2F0aW9uLmV1MTAuaGFuYS5vbmRlbWFuZC5jb20vdG9rZW5fa2V5cyIsImtpZCI6ImRlZmF1bHQtand0LWtleS0yNzg1MjQ1ODMiLCJ0eXAiOiJKV1QiLCJqaWQiOiAiRzZlbzFDTWoxYmRodjd4eHU1aGV4Y1F4VlpQZ0NGcjFrSGlaQ0E4N0t1bz0ifQ.eyJqdGkiOiI3ZGNkOTY5MjI2NjM0MDFkYjQwOTEzZTRlM2EwMDY4MyIsImV4dF9hdHRyIjp7ImVuaGFuY2VyIjoiWFNVQUEiLCJzdWJhY2NvdW50aWQiOiJhZjI4ODAyMS03NTA0LTRiYWQtYjNmNS0wMTgwMGEzMmFlYTIiLCJ6ZG4iOiJzYWRldm1haW4ifSwic3ViIjoic2ItdmVydGlnby10cmF2ZWxzLWNhcC1zYWRldm1haW4tZGV2IXQxNDEyODAiLCJhdXRob3JpdGllcyI6WyJ1YWEucmVzb3VyY2UiXSwic2NvcGUiOlsidWFhLnJlc291cmNlIl0sImNsaWVudF9pZCI6InNiLXZlcnRpZ28tdHJhdmVscy1jYXAtc2FkZXZtYWluLWRldiF0MTQxMjgwIiwiY2lkIjoic2ItdmVydGlnby10cmF2ZWxzLWNhcC1zYWRldm1haW4tZGV2IXQxNDEyODAiLCJhenAiOiJzYi12ZXJ0aWdvLXRyYXZlbHMtY2FwLXNhZGV2bWFpbi1kZXYhdDE0MTI4MCIsImdyYW50X3R5cGUiOiJjbGllbnRfY3JlZGVudGlhbHMiLCJyZXZfc2lnIjoiOWRlZTdmMWYiLCJpYXQiOjE3NTU1ODY1ODQsImV4cCI6MTc1NTYyOTc4NCwiaXNzIjoiaHR0cHM6Ly9zYWRldm1haW4uYXV0aGVudGljYXRpb24uZXUxMC5oYW5hLm9uZGVtYW5kLmNvbS9vYXV0aC90b2tlbiIsInppZCI6ImFmMjg4MDIxLTc1MDQtNGJhZC1iM2Y1LTAxODAwYTMyYWVhMiIsImF1ZCI6WyJzYi12ZXJ0aWdvLXRyYXZlbHMtY2FwLXNhZGV2bWFpbi1kZXYhdDE0MTI4MCIsInVhYSJdfQ.QaFFBASAtexrK1TrggqB9zPM47axt_0nJxhKzGk_O5Zg10uOixOZ_U0pTc_GbwSoQpJyPGM0iQRxCqiFnIsfhWjcB8NGpHtgjMsJpZsjR5LklmVmsmytegxKmgaZsWEUBorI5Ai-s40jJc-6i6uXQs12a0bLWz0R5x-N0Ookx2dLYU45OMmpKdG9IySRmbcY_5MyFDhKDW8wZqviDxKbXIBEsHqu74gZSbpOtLWHCfyYIG-dnR5_Nz1dO4enQSugfQlKoyH7-Zzox3pC6cnMJckc942Gh9hv7BheNGX_w73xdFCP83CkGAA50f-DOpBbXVMX0DPytRwVjulqZCgYOA
+
+
+### **Scenario 0: Admin Setup - Create a Course**
+This is a prerequisite for all other scenarios. Barry, the travel agent, defines a new course.
+
+```http
+### =================================================================
+### SCENARIO 0: ADMIN - CREATE A NEW COURSE
+### =================================================================
+
+GET {{host}}/admin/$metadata
+Authorization: Bearer {{token}}
+
+###
+
+GET {{host}}/admin/SubmittedDocuments
+Authorization: Bearer {{token}}
+###
+
+GET {{host}}/admin/Courses
+Authorization: Bearer {{token}}
+###
+
+GET {{host}}/admin/Courses(7211fb22-b4ab-441a-9694-55c6a7c1762d)/requiredDocuments
+Authorization: Bearer {{token}}
+###
+
+DELETE {{host}}/admin/Courses(7211fb22-b4ab-441a-9694-55c6a7c1762d)
+Authorization: Bearer {{token}}
+
+###
+
+GET {{host}}/admin/Subscriptions
+Authorization: Bearer {{token}}
+
+###
+
+DELETE {{host}}/admin/Subscriptions(149dc2ac-4eb3-4d1d-95fb-96f2259307e3)
+Authorization: Bearer {{token}}
+
+#### @name createCourse
+POST {{host}}/admin/Courses
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "Surfing Level 2",
+    "description": "An advanced course for experienced surfers.",
+    "price": 1200.00,
+    "depositAmount": 200.00,
+    "image":"resources/img/climbing.jpg",
+    "requiredDocuments": [
+        { "documentType": "ID_CARD", "description": "Government-issued Photo ID" },
+        { "documentType": "SURFING_CERT_L1", "description": "Surfing Level 1 Certificate" }
+    ]
+}
+
+
+### Get the ID of the newly created course
+@courseId = {{createCourse.response.body.ID}}
+```
+---
+
+### **Scenario 1: Happy Path - Solo Traveler Books, Gets Approved**
+
+Mary books a course, submits a valid document, it gets approved, she pays the deposit, and the subscription is confirmed.
+
+```http
+### =================================================================
+### SCENARIO 1: SOLO TRAVELER - HAPPY PATH
+### =================================================================
+
+# 1. Mary signs up (we'll use the Admin service to create her record for this test)
+# @name createTravelerMary
+POST {{host}}/admin/Travelers
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "firstName": "Mary",
+    "lastName": "Major",
+    "email": "mary.major@example.com",
+    "dateOfBirth": "1990-05-15"
+}
+### Get the ID of the newly created traveler
+@travelerIdMary = {{createTravelerMary.response.body.ID}}
+
+# 2. Mary subscribes to the Sailing Level 2 course
+# @name createSubscriptionMary
+POST {{host}}/traveler/Subscriptions
+Content-Type: application/json
+
+{
+    "traveler_ID": "{{travelerIdMary}}",
+    "course_ID": "{{courseId}}",
+    "status": "DocsPending"
+}
+### Get the ID of the newly created subscription
+@subscriptionIdMary = {{createSubscriptionMary.response.body.ID}}
+
+# 3. Mary uploads her ID card
+# @name uploadDocumentMary
+POST {{host}}/traveler/SubmittedDocuments
+Content-Type: application/json
+
+{
+    "subscription_ID": "{{subscriptionIdMary}}",
+    "documentType": "ID_CARD",
+    "fileName": "mary_id_card.pdf",
+    "mimeType": "application/pdf"
+}
+### Get the ID of the uploaded document
+@documentIdMary = {{uploadDocumentMary.response.body.ID}}
+
+# --- SIMULATION: Backend/Admin processing ---
+
+# 4. SIMULATION: The document is processed and approved (by an Admin or automated process)
+GET {{host}}/admin/SubmittedDocuments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+####
+# 4. SIMULATION: The document is processed and approved (by an Admin or automated process)
+GET {{host}}/admin/SubmittedDocuments/007e4c4f-e7a9-401b-8dd8-121907b5f561
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+####
+# 4. SIMULATION: The document is processed and approved (by an Admin or automated process)
+PATCH {{host}}/admin/SubmittedDocuments/007e4c4f-e7a9-401b-8dd8-121907b5f561
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "Uploaded",
+  "extractedData": "{\"firstName\": \"Mary\", \"lastName\": \"Major\", \"dob\": \"1990-05-15\"}"
+}
+####
+# 4. SIMULATION: The document is processed and approved (by an Admin or automated process)
+PATCH {{host}}/admin/SubmittedDocuments/791f44bd-5d27-4626-a104-529d1624cfc4
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "Uploaded",
+  "documentID": "f225a7ad-1194-4126-b118-2e30e94cc44f",
+  "documentTypeSchemaID": "db2dd269-0987-4220-8e20-d50f16ee9c5f",
+  "fileName": "sample-invoice-2.pdf",
+  "mimeType": "application/pdf",
+  "extractedData": ""
+}
+
+### 5. SIMULATION: Since all docs are approved, the subscription status is updated to DepositPending
+PATCH {{host}}/admin/Subscriptions/{{subscriptionIdMary}}
+Content-Type: application/json
+
+{
+    "status": "DepositPending"
+}
+
+
+### 6. SIMULATION: Mary pays the deposit, and a webhook confirms the payment.
+#    The system updates the status to Confirmed and adds S/4HANA IDs.
+PATCH {{host}}/admin/Subscriptions/{{subscriptionIdMary}}
+Content-Type: application/json
+
+{
+    "status": "Confirmed",
+    "s4hanaBusinessPartnerID": "BP100234",
+    "s4hanaSalesOrderID": "SO500456"
+}
+
+### getBusinessPartner: get a S4 Business Partner
+POST {{host}}/s4-api/getBusinessPartner
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+   "message":{
+      "businessPartnerID": "1000911"
+   }
+}
+
+### createNewBusinessPartner: create a new S4 Business Partner
+POST {{host}}/s4-api/createNewBusinessPartner
+Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+{
+   "message":{
+        "firstName": "Mary",
+        "lastName": "Jane",
+        "email": "mary@travels.com"
+   }
+}

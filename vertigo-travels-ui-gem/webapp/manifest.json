@@ -1,0 +1,120 @@
+{
+    "_version": "1.48.0",
+    "sap.app": {
+        "id": "vt",
+        "type": "application",
+        "title": "Vertigo Travels",
+        "applicationVersion": {
+            "version": "1.0.0"
+        }
+    },
+    "sap.ui": {
+        "technology": "UI5",
+        "deviceTypes": {
+            "desktop": true,
+            "tablet": true,
+            "phone": true
+        }
+    },
+    "sap.ui5": {
+        "rootView": {
+            "viewName": "vt.view.App",
+            "type": "XML",
+            "async": true,
+            "id": "App"
+        },
+        "dependencies": {
+            "minUI5Version": "1.120.0",
+            "libs": {
+                "sap.m": {},
+                "sap.f": {},
+                "sap.ui.layout": {},
+                "sap.ui.unified": {}
+            }
+        },
+        "models": {
+            "i18n": {
+                "type": "sap.ui.model.resource.ResourceModel",
+                "settings": {
+                    "bundleName": "vt.i18n.i18n"
+                }
+            },
+            "session": {
+                "type": "sap.ui.model.json.JSONModel",
+                "dataSource": "session"
+            },
+            "traveler": {
+                "type": "sap.ui.model.odata.v4.ODataModel",
+                "settings": {
+                    "synchronizationMode": "None",
+                    "operationMode": "Server",
+                    "autoExpandSelect": true,
+                    "serviceUrl": "/api/traveler/"
+                }
+            },
+            "admin": {
+                "type": "sap.ui.model.odata.v4.ODataModel",
+                "settings": {
+                    "synchronizationMode": "None",
+                    "operationMode": "Server",
+                    "autoExpandSelect": true,
+                    "serviceUrl": "/api/admin/"
+                }
+            }
+        },
+        "routing": {
+            "config": {
+                "routerClass": "sap.m.routing.Router",
+                "viewType": "XML",
+                "viewPath": "vt.view",
+                "controlId": "app",
+                "controlAggregation": "pages",
+                "async": true
+            },
+            "routes": [
+                {
+                    "name": "courses",
+                    "pattern": "",
+                    "target": "CoursesList"
+                },
+                {
+                    "name": "courseDetail",
+                    "pattern": "course/{id}",
+                    "target": "CourseDetail"
+                },
+                {
+                    "name": "subscriptions",
+                    "pattern": "subscriptions",
+                    "target": "ManageSubscriptions"
+                },
+                {
+                    "name": "adminTravelers",
+                    "pattern": "admin/travelers",
+                    "target": "ManageTravelers"
+                },
+                {
+                    "name": "adminCourses",
+                    "pattern": "admin/courses",
+                    "target": "ManageCourses"
+                }
+            ],
+            "targets": {
+                "CoursesList": {
+                    "viewName": "CoursesList"
+                },
+                "CourseDetail": {
+                    "viewName": "CourseDetail"
+                },
+                "ManageSubscriptions": {
+                    "viewName": "ManageSubscriptions"
+                },
+                "ManageTravelers": {
+                    "viewName": "ManageTravelers"
+                },
+                "ManageCourses": {
+                    "viewName": "ManageCourses"
+                }
+            }
+        }
+    }
+}
