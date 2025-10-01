@@ -332,7 +332,8 @@
       xsuaaTokenCSECRET: null,
       backendCDSCAPEndpoint: null,
       s4Endpoint: null,
-      schemaDocuments: []
+      schemaDocuments: [],
+      docAIEndpoint: null,
     };
 
     // --- UTILITY FUNCTIONS ---
@@ -448,7 +449,34 @@
       document.getElementById('doc-review-overlay').classList.add('hidden');
     }
 
-    // --- MOCK API SERVICE ---
+    // --- API SERVICE ---
+    // This service simulates API calls. Replace with real API calls as needed.
+    // Here is the list of API Services needed:
+    // 1. getAccessToken
+    // 2. getCourses
+    // 3. getRequiredDocuments
+    // 4. createSubscription
+    // 5. createSubmittedDocumentsBySubscriptionID
+    // 6. getSubscriptions
+    // 7. getTravelers
+    // 8. getTraveler
+    // 9. getSubmittedDocuments
+    // 10. createS4BusinessPartner
+    // 11. createS4SalesOrder
+    // 12. updateSubscriptionStatus
+    // 13. updateSubmittedDocuments
+    // 14. updateSubmittedDocumentsWithDocumentFileID
+    // 15. createCourse
+    // 16. getSchemaDocuments
+    // 17. getOcrResponse
+    // 18. getTextResponse
+    // 19. createTraveler
+    // 20. updateTraveler
+    // 21. getOpenDocuments
+    // 22. addS4SalesOrderItem
+    // 23. addS4SalesOrderPricingElement
+
+
     const ApiService = {
       async getAccessToken() {
         try {
@@ -583,7 +611,8 @@
                 email: 'sandboxadmin@vjrrw.onmicrosoft.com',
                 // Use the documentId from the response in the subject and message
                 subject: `New Document for Approval: ${documentId}`,
-                message: `https://sa-gen-ai-enablement-ou0xihwt.eu10.doc.cloud.sap/workspace#/Documents(${documentId})`
+                navurl: state.docAIEndpoint + `/workspace#/Documents(${documentId})`,
+                message: 'Please find the pending document for your approval '
               })
             }).then(response => {
               if (!response.ok) {
@@ -722,15 +751,46 @@
         };
       },
 
+      async createS4SalesOrder(businessPartnerID, depositAmount) {
+        console.log("Creating S/4HANA Sales Order for BP ID: ", businessPartnerID, " and Deposit: ", depositAmount);
+        const url = state.backendCDSCAPEndpoint + `/s4-api/createNewSalesOrder`;
+        const token = state.accessToken;
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            "message": {
+              "BusinessPartnerID": businessPartnerID, // Passed to SoldToParty
+              "DepositAmount": depositAmount
+            }
+          })
+        };
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error.message);
+        }
+        const data = await response.json();
+        console.log("Sales Order created: ", data);
+        return {
+          value: data
+        };
+      },
+
       async updateSubscriptionStatus(subscriptionId, status, s4hanaBPID = null, s4hanaSOID = null) {
+
+        // 1. PATCH Subscription Status
         console.log(`Simulating PATCH /admin/Subscriptions/${subscriptionId}`, {
           status,
           s4hanaBusinessPartnerID: s4hanaBPID,
           s4hanaSalesOrderID: s4hanaSOID
         });
-        const url = state.backendCDSCAPEndpoint + `/admin/Subscriptions/${subscriptionId}`;
+        const updateUrl = state.backendCDSCAPEndpoint + `/admin/Subscriptions/${subscriptionId}`;
         const token = state.accessToken;
-        const options = {
+        const updateOptions = {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -742,11 +802,85 @@
             "s4hanaSalesOrderID": s4hanaSOID
           })
         };
-        const response = await fetch(url, options);
-        const data = await response.json();
-        return {
-          value: data
-        };
+
+        const updateResponse = await fetch(updateUrl, updateOptions);
+        if (!updateResponse.ok) {
+          throw new Error(`Failed to update subscription status: ${updateResponse.statusText}`);
+        }
+        const updatedData = await updateResponse.json();
+
+        // 2. Fetch Traveler and Course Information for Email
+        try {
+          // Re-fetch the updated subscription data to get related IDs
+          const subDetailUrl = state.backendCDSCAPEndpoint + `/admin/Subscriptions/${subscriptionId}?$expand=traveler,course`;
+          const subDetailResponse = await fetch(subDetailUrl, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const subDetails = await subDetailResponse.json();
+
+          const traveler = subDetails.traveler;
+          const course = subDetails.course;
+
+          // 3. Prepare Email Content based on New Status
+          let emailSubject = '';
+          let emailMessage = '';
+          let navigationURL = '';
+
+          switch (status) {
+            case 'DepositPending':
+              emailSubject = `Action Required: Deposit Payment for ${course.name}`;
+              emailMessage = `Your required documents for the course **${course.name}** have been approved! Please proceed with the deposit payment of **$${course.depositAmount}** to confirm your subscription.`;
+              navigationURL = window.location.origin + '?$navigate=subscriptions';
+              break;
+            case 'Confirmed':
+              emailSubject = `Subscription Confirmed: ${course.name}`;
+              emailMessage = `Congratulations, your subscription to **${course.name}** is now fully confirmed! Your S/4HANA Business Partner ID is **${s4hanaBPID}** and Sales Order ID is **${s4hanaSOID}**.`;
+              break;
+            // Add other status cases (e.g., 'Canceled') as needed
+            default:
+              emailSubject = `Subscription Update: ${course.name}`;
+              emailMessage = `Your subscription status for **${course.name}** has been updated to **${status}**.`;
+              navigationURL = window.location.origin + '?$navigate=subscriptions';
+              break;
+          }
+
+          // 4. Send Email
+          const emailPayload = {
+            name: traveler.firstName + ' ' + traveler.lastName,
+            email: traveler.email,
+            subject: emailSubject,
+            // Using a generic message for the body
+            message: emailMessage,
+            // Add dynamic data like S/4 IDs to the email template context
+            s4hanaBPID: s4hanaBPID,
+            s4hanaSOID: s4hanaSOID,
+            navurl: navigationURL
+          };
+
+          fetch('/send-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(emailPayload)
+          }).then(response => {
+            if (!response.ok) {
+              console.error(`Failed to send email to ${traveler.email}:`, response.statusText);
+            } else {
+              console.log(`Email successfully triggered for subscription ${subscriptionId} to ${traveler.email}.`);
+            }
+          }).catch(error => {
+            console.error(`Error sending email for subscription ${subscriptionId}:`, error);
+          });
+
+        } catch (error) {
+          // Log a warning if email fails, but do not block the main function
+          console.warn("Could not fetch details or send email:", error.message);
+        }
+
+        // 5. Return the result of the main PATCH operation
+        return { value: updatedData };
       },
 
       async updateSubmittedDocuments(submittedDocumentsID, status, extractedData) {
@@ -912,6 +1046,56 @@
         const data = await response.json();
         return data.value;
       },
+
+      async addS4SalesOrderItem(salesOrderID, materialID) {
+        console.log("Adding S/4HANA Sales Order Item to SO: ", salesOrderID);
+        const url = state.backendCDSCAPEndpoint + `/s4-api/addSalesOrderItem`;
+        const token = state.accessToken;
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            "message": {
+              "SalesOrderID": salesOrderID,
+              "MaterialID": materialID
+            }
+          })
+        };
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error.message || 'Failed to add sales order item.');
+        }
+        return response.json();
+      },
+
+      async addS4SalesOrderPricingElement(salesOrderID, remainingAmount) {
+        console.log("Adding S/4HANA Pricing Element (Remaining Balance) to SO: ", salesOrderID);
+        const url = state.backendCDSCAPEndpoint + `/s4-api/addSalesOrderPricingElement`;
+        const token = state.accessToken;
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            "message": {
+              "SalesOrderID": salesOrderID,
+              "ConditionRateValue": remainingAmount
+            }
+          })
+        };
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error.message || 'Failed to add pricing element.');
+        }
+        return response.json();
+      }
 
     };
 
@@ -1153,7 +1337,20 @@
               statusColor = 'bg-purple-400';
               actionButton = `<button data-id="${s.ID}" class="action-button ui5-button ui5-button-primary pay-deposit-btn mt-4">Pay Deposit ($${course.depositAmount})</button>`;
               break;
-            case 'Confirmed': statusColor = 'bg-green-400'; break;
+            case 'Confirmed':
+              statusColor = 'bg-green-400';
+              // Check if the full payment step has been taken (e.g., if SOID is available and the full payment flag isn't set, or use a new status)
+              // We'll assume 'Confirmed' means Deposit Paid, and now we need the final payment.
+              const remainingPrice = course.price - course.depositAmount;
+              if (remainingPrice > 0) {
+                statusColor = 'bg-teal-400'; // New color for Deposit Paid, Remaining Pending
+                actionButton = `<button data-id="${s.ID}" data-course-id="${course.ID}" data-remaining-price="${remainingPrice}" class="action-button ui5-button bg-orange-500 hover:bg-orange-600 text-white pay-remaining-btn mt-4">Pay Remaining (${(remainingPrice * 0.9).toFixed(2)})</button>`;
+              }
+              // If remainingPrice is 0 or less, the full payment is complete.
+              break;
+            case 'Complete': // New final status
+              statusColor = 'bg-green-600';
+              break;
             case 'Canceled': statusColor = 'bg-red-400'; break;
           }
           const documentsHtml = allRequiredDocs.length > 0 ? `
@@ -1185,173 +1382,97 @@
         subscriptionList.innerHTML = '<p class="text-gray-500 text-center">You have no active subscriptions.</p>';
       }
 
+
       document.querySelectorAll('.pay-deposit-btn').forEach(button => {
         button.addEventListener('click', async (e) => {
           const subscriptionId = e.target.getAttribute('data-id');
+          // Find the subscription and its course to get the deposit amount
+          const subscription = mySubscriptions.find(s => s.ID === subscriptionId);
+          const course = courses.value.find(c => c.ID === subscription.course_ID);
+
+          if (!subscription || !course) {
+            showMessage("Error: Could not find subscription or course details.");
+            return;
+          }
+
           showProcessingOverlay();
           try {
-            const businessPartner = await ApiService.createS4BusinessPartner(state.selectedTravelerId);
-            await ApiService.updateSubscriptionStatus(subscriptionId, 'Confirmed', businessPartner.value.BusinessPartner, 'SO' + Math.floor(Math.random() * 1000000));
+            //  Scenario: If it's a recurring traveler with an existing BP
+            const existingBPID = await ApiService.getTraveler(state.selectedTravelerId).then(r => r.value.businessPartnerID);
+            let s4hanaBPID = '';
+
+            if (existingBPID) {
+              console.log("Traveler already has an existing S/4HANA BP ID:", existingBPID);
+              s4hanaBPID = existingBPID;
+            } else {
+              console.log("Traveler does not have an S/4HANA BP ID. Creating a new one.");
+              //  Todo: Creation of BP for new traveler is not working in S4
+              // Update traveler record with new BP ID
+              // 1. Create Business Partner (if not already done)
+              // const businessPartner = await ApiService.createS4BusinessPartner(state.selectedTravelerId);
+              // s4hanaBPID = businessPartner.value.BusinessPartner;
+              // await ApiService.updateTraveler(state.selectedTravelerId, { s4hanaBusinessPartnerID: s4hanaBPID });
+              s4hanaBPID = "1000937";
+
+            }
+
+            // 2. Create Sales Order
+            const salesOrder = await ApiService.createS4SalesOrder(s4hanaBPID, course.depositAmount);
+            console.log("Sales Order created:", salesOrder);
+            const s4hanaSOID = salesOrder.value.SalesOrder; // Extract the Sales Order ID
+
+            // 3. Update Subscription status with both IDs
+            await ApiService.updateSubscriptionStatus(subscriptionId, 'Confirmed', s4hanaBPID, s4hanaSOID);
+
             hideProcessingOverlay();
-            showMessage("Payment confirmed and subscription updated!");
+            showMessage(`Payment confirmed. Subscription updated! (BP: ${s4hanaBPID}, SO: ${s4hanaSOID})`);
             renderManageSubscriptions();
           } catch (error) {
             hideProcessingOverlay();
             console.error("Failed to process payment:", error);
-            showMessage("An error occurred while processing payment. Please try again.");
+            showMessage(`An error occurred while processing payment: ${error.message}`);
           }
         });
       });
-    }
 
-    async function renderManageTravelers() {
-      const container = document.getElementById('app-container');
-      container.innerHTML = `
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">Manage Travelers</h2>
-        <div id="traveler-list-container" class="ui5-card p-6 non-clickable">
-            <p class="text-gray-500">Loading traveler data...</p>
-        </div>
-      `;
-
-      const [travelers, subscriptions, documents, courses] = await Promise.all([
-        ApiService.getTravelers().then(r => r.value),
-        ApiService.getSubscriptions().then(r => r.value),
-        ApiService.getSubmittedDocuments().then(r => r.value),
-        ApiService.getCourses().then(r => r.value)
-      ]);
-
-      const travelerListContainer = document.getElementById('traveler-list-container');
-      const allCourseIds = [...new Set(subscriptions.map(s => s.course_ID))];
-      const requiredDocsResults = await Promise.all(allCourseIds.map(courseId => ApiService.getRequiredDocuments(courseId)));
-      const requiredDocsMap = allCourseIds.reduce((acc, courseId, index) => {
-        acc[courseId] = requiredDocsResults[index]?.value || [];
-        return acc;
-      }, {});
-
-      if (travelers.length > 0) {
-        travelerListContainer.innerHTML = `
-          <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                  <tr>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscriptions</th>
-                  </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                  ${travelers.map(traveler => {
-          const travelerSubs = subscriptions.filter(s => s.traveler_ID === traveler.ID);
-          const subsHtml = travelerSubs.length > 0 ? travelerSubs.map(sub => {
-            const course = courses.find(c => c.ID === sub.course_ID);
-            const allRequiredDocs = requiredDocsMap[sub.course_ID] || [];
-            const relevantDocs = documents.filter(d => d.subscription_ID === sub.ID);
-            // console.log("Relevant Documents for Subscription", sub.ID, ":", relevantDocs);
-
-            let actionButton = '';
-            if (sub.status === 'DocsPending' || sub.status === 'DocsChecking' || sub.status === 'ActionRequired') {
-              actionButton = `<button data-id="${sub.ID}" class="action-button ui5-button bg-gray-200 text-gray-800 hover:bg-gray-300 approve-docs-btn text-xs py-1 px-3 rounded-md">Approve Docs</button>`;
-            } else if (sub.status === 'DepositPending') {
-              actionButton = `<button data-id="${sub.ID}" class="action-button ui5-button bg-gray-200 text-gray-800 hover:bg-gray-300 approve-payment-btn text-xs py-1 px-3 rounded-md">Approve Payment</button>`;
-            }
-            const documentsHtml = allRequiredDocs.length > 0 ? `
-                        <div class="mt-2 p-2 bg-gray-100 rounded-md">
-                            <h5 class="font-semibold text-xs mb-1">Document Status</h5>
-                            <ul class="space-y-1 text-xs text-gray-700">
-                                ${allRequiredDocs.map(requiredDoc => {
-              const matchingDoc = relevantDocs.find(d => d.documentType === requiredDoc.documentType);
-              // console.log("Current Required Document:", requiredDoc);
-              console.log("Found Matching Submitted Document:", matchingDoc);
-              const status = matchingDoc ? matchingDoc.status : 'Missing';
-              const statusClass = status === 'Uploaded' ? 'text-green-600' : 'text-red-600';
-              const reviewButtonHtml = (matchingDoc && status === 'Uploaded') ?
-                `<button class="review-doc-btn text-xs text-blue-600 hover:underline ml-auto"
-                                        data-subdocumentid="${matchingDoc.ID}"
-                                        data-documentid="${matchingDoc.documentID}"
-                                        data-filename="${matchingDoc.fileName}"
-                                        data-doctype="${matchingDoc.documentType}"
-                                        data-mimetype="${matchingDoc.mimeType}"
-                                        data-extracteddata='${JSON.stringify(matchingDoc.extractedData)}'
-                                        data-status="${matchingDoc.status}">Review</button>` : '';
-              return `
-                                    <li class="flex items-center justify-between">
-                                        <div>
-                                            <span class="font-medium">${requiredDoc.description}</span>
-                                            <span class="font-bold ${statusClass} ml-1">(${status})</span>
-                                        </div>
-                                        ${reviewButtonHtml}
-                                    </li>`;
-            }).join('')}
-                            </ul>
-                        </div>` : `<p class="text-xs text-gray-500 mt-2">No documents required.</p>`;
-
-            return `
-                        <div class="my-2 p-3 border border-gray-200 rounded-md shadow-sm bg-white">
-                            <div class="flex justify-between items-center mb-2">
-                                <div>
-                                    <p class="text-sm font-medium">${course?.name || 'Unknown Course'}</p>
-                                    <p class="text-xs text-gray-500">Status: ${sub.status}</p>
-                                    <p class="text-xs text-gray-500">ID: ${sub.ID}</p>
-                                    ${sub.s4hanaBusinessPartnerID ? `<p class="text-xs text-gray-500">BP ID: ${sub.s4hanaBusinessPartnerID}</p>` : ''}
-                                    ${sub.s4hanaSalesOrderID ? `<p class="text-xs text-gray-500">SO ID: ${sub.s4hanaSalesOrderID}</p>` : ''}
-                                </div>
-                                ${actionButton}
-                            </div>
-                            ${documentsHtml}
-                        </div>`;
-          }).join('') : `<p class="text-sm text-gray-500">No subscriptions</p>`;
-          return `
-                      <tr>
-                          <td class="px-6 py-4 whitespace-nowrap" data-label="Name">
-                            <div class="text-sm text-gray-900">${traveler.firstName} ${traveler.lastName}</div>
-                          </td>
-                          <td class="px-6 py-4 whitespace-nowrap" data-label="Email">
-                            <div class="text-sm text-gray-500">${traveler.email}</div>
-                          </td>
-                          <td class="px-6 py-4" data-label="Subscriptions">
-                            <h4 class="font-semibold text-sm mb-2">📄</h4> 
-                            <div>${subsHtml}</div>
-                          </td>
-                      </tr>`;
-        }).join('')}
-              </tbody>
-          </table>`;
-      } else {
-        travelerListContainer.innerHTML = '<p class="text-gray-500 text-center">No travelers have signed up yet.</p>';
-      }
-
-      document.querySelectorAll('.approve-docs-btn').forEach(button => {
+      document.querySelectorAll('.pay-remaining-btn').forEach(button => {
         button.addEventListener('click', async (e) => {
           const subscriptionId = e.target.getAttribute('data-id');
+          const courseId = e.target.getAttribute('data-course-id');
+          const remainingAmount = e.target.getAttribute('data-remaining-price');
+
           showProcessingOverlay();
           try {
-            await ApiService.updateSubscriptionStatus(subscriptionId, 'DepositPending');
+            // 1. Get Subscription and Course details (need S4 SO ID and S4 Product ID)
+            const subscription = mySubscriptions.find(s => s.ID === subscriptionId);
+            const course = courses.value.find(c => c.ID === courseId);
+            const s4hanaSOID = subscription.s4hanaSalesOrderID;
+            const s4hanaProductID = course.s4hanaProductID; // Assuming this property exists now
+
+            if (!s4hanaSOID) throw new Error("Missing S/4HANA Sales Order ID on subscription.");
+            if (!s4hanaProductID) throw new Error("Missing S/4HANA Product ID on course.");
+
+            // 2. Add Sales Order Item
+            await ApiService.addS4SalesOrderItem(s4hanaSOID, s4hanaProductID);
+
+            // 3. Add Pricing Element for Remaining Amount (90% of Remaining Price)
+            await ApiService.addS4SalesOrderPricingElement(s4hanaSOID, remainingAmount);
+
+            // 4. Update Subscription status to 'Complete'
+            await ApiService.updateSubscriptionStatus(subscriptionId, 'Complete', subscription.s4hanaBusinessPartnerID, s4hanaSOID);
+
             hideProcessingOverlay();
-            showMessage("Subscription status updated to 'DepositPending'.");
-            renderManageTravelers();
+            showMessage("Full payment processed. Subscription is now complete!");
+            renderManageSubscriptions();
           } catch (error) {
             hideProcessingOverlay();
-            console.error("Failed to approve documents:", error);
-            showMessage("An error occurred while approving documents.");
+            console.error("Failed to process remaining payment:", error);
+            showMessage("An error occurred while processing remaining payment. Please try again.");
           }
         });
       });
 
-      document.querySelectorAll('.approve-payment-btn').forEach(button => {
-        button.addEventListener('click', async (e) => {
-          const subscriptionId = e.target.getAttribute('data-id');
-          showProcessingOverlay();
-          try {
-            await ApiService.updateSubscriptionStatus(subscriptionId, 'Confirmed', 'BP' + Math.floor(Math.random() * 1000000), 'SO' + Math.floor(Math.random() * 1000000));
-            hideProcessingOverlay();
-            showMessage("Subscription status updated to 'Confirmed'.");
-            renderManageTravelers();
-          } catch (error) {
-            hideProcessingOverlay();
-            console.error("Failed to approve payment:", error);
-            showMessage("An error occurred while approving payment.");
-          }
-        });
-      });
+
     }
 
     async function renderManageCourses() {
@@ -1538,8 +1659,6 @@
       }
     }
 
-
-    // This function replaces the old renderManageTravelers function entirely.
     async function renderAdminManageTravelers() {
       const container = document.getElementById('app-container');
       container.innerHTML = `
@@ -1708,8 +1827,28 @@
                                 ${allRequiredDocs.map(requiredDoc => {
               const matchingDoc = relevantDocs.find(d => d.documentType === requiredDoc.documentType);
               const status = matchingDoc ? matchingDoc.status : 'Missing';
-              const statusClass = status === 'Uploaded' ? 'text-green-600' : 'text-red-600';
-              const reviewButtonHtml = (matchingDoc && status === 'Uploaded') ?
+
+              let statusClass = 'text-gray-500'; // Default color for unhandled statuses
+              switch (status) {
+                case 'Uploaded':
+                  statusClass = 'text-blue-600'; // Uploaded/Pending Review
+                  break;
+                case 'Confirmed':
+                  statusClass = 'text-green-600'; // Approved/Confirmed
+                  break;
+                case 'confirmed':
+                  statusClass = 'text-green-600'; // Approved/Confirmed
+                  break;
+                case 'Missing':
+                  statusClass = 'text-red-600'; // Missing
+                  break;
+                case 'ActionRequired':
+                  statusClass = 'text-yellow-600'; // Needs User/Admin Action
+                  break;
+                // Add other statuses here if needed
+              }
+
+              const reviewButtonHtml = (matchingDoc && (status === 'Uploaded' || status === 'ActionRequired')) ?
                 `<button class="review-doc-btn text-xs text-blue-600 hover:underline ml-auto"
                                         data-subdocumentid="${matchingDoc.ID}"
                                         data-documentid="${matchingDoc.documentID}"
@@ -1787,7 +1926,7 @@
           const subscriptionId = e.target.getAttribute('data-id');
           showProcessingOverlay();
           try {
-            await ApiService.updateSubscriptionStatus(subscriptionId, 'Confirmed', 'BP' + Math.floor(Math.random() * 1000000), 'SO' + Math.floor(Math.random() * 1000000));
+            await ApiService.updateSubscriptionStatus(subscriptionId, 'Confirmed', null, 'SO' + Math.floor(Math.random() * 1000000));
             hideProcessingOverlay();
             showMessage("Subscription status updated to 'Confirmed'.");
             renderAdminManageTravelers();
@@ -1857,8 +1996,8 @@
             const submittedDocsHtml = subDocs.map(doc => {
               const statusClass = doc.status === 'Uploaded' ? 'text-green-600' : 'text-red-600';
               const isMissing = doc.status === 'Missing';
-// Suggest <i class="activate"></i>
-// Suggest <i class="fas fa magic"></i>
+              // Suggest <i class="activate"></i>
+              // Suggest <i class="fas fa magic"></i>
               const missingDocControls = isMissing ? `
                 <div class="flex flex-col md:flex-row items-center md:space-x-2 mt-2">
                     <div class="flex items-center space-x-2 w-full md:w-auto mb-2 md:mb-0">
@@ -2339,6 +2478,7 @@
         state.xsuaaTokenCSECRET = endpoints.XSUAA_AUTH_CSECRET;
         state.backendCDSCAPEndpoint = endpoints.BACKEND_CDS_ENDPOINT;
         state.s4Endpoint = endpoints.S4HANA_ENDPOINT;
+        state.docAIEndpoint = endpoints.DOCAI_ENDPOINT;
 
         await ApiService.getAccessToken();
 

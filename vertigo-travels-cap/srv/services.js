@@ -69,6 +69,130 @@ module.exports = cds.service.impl(async function () {
             console.error(error);
         }
     });
+
+    this.on('createNewSalesOrder', async req => {
+
+        await getS4CsrfToken(); // Assuming this function is available and works
+
+        const payloadSO = req.data.message;
+        console.log("Received payload for S4 Sales Order: ", payloadSO);
+
+        // Construct the S/4HANA Sales Order payload
+        const salesOrderPayload = {
+            "SalesOrderType": "OR",
+            "SalesOrganization": "BA10",
+            "DistributionChannel": "10",
+            "SoldToParty": payloadSO.BusinessPartnerID, // Passed from frontend
+            "to_Item": [{
+                "SalesOrderItem": "10",
+                "Material": "167", // Assuming '167' is your service item material
+                "RequestedQuantity": "1",
+                "OrderQuantityUnit": "EA",
+                "CostAmount": "0"
+            }],
+            "to_PricingElement": [{
+                "ConditionType": "DRV1", // Deposit Condition Type
+                "ConditionRateValue": String(payloadSO.DepositAmount), // Passed from frontend (must be a string for S/4)
+                "PricingProcedureStep": "230",
+                "PricingProcedureCounter": "1"
+            }]
+        };
+
+        const options = {
+            method: 'POST',
+            // OData endpoint for Sales Order creation
+            url: `${s4desturl}/sap/opu/odata/sap/API_SALES_ORDER_SRV/A_SalesOrder`,
+            headers: {
+                'x-csrf-token': s4csrftoken,
+                authorization: s4destauthtoken,
+                'content-type': 'application/json',
+                'Cookie': s4cookies.join('; ')
+            },
+            data: salesOrderPayload
+        };
+
+        try {
+            const { data } = await axios.request(options);
+            console.log("S/4 Sales Order Response:", data);
+            // Return the created Sales Order ID
+            return data.d;
+        } catch (error) {
+            console.error("S/4 Sales Order Creation Failed:", error.response ? error.response.data : error.message);
+            throw new Error('S/4 Sales Order Creation Failed');
+        }
+    });
+
+    this.on('addSalesOrderItem', async req => {
+        await getS4CsrfToken();
+
+        const payloadItem = req.data.message;
+        console.log("Received payload for S4 Sales Order Item: ", payloadItem);
+
+        const itemPayload = {
+            "SalesOrder": payloadItem.SalesOrderID, // Existing Sales Order ID
+            "Material": payloadItem.MaterialID, // S/4 HANA Product ID (from Course)
+            "RequestedQuantity": "1",
+            "OrderQuantityUnit": "EA"
+        };
+
+        const options = {
+            method: 'POST',
+            url: `${s4desturl}/sap/opu/odata/sap/API_SALES_ORDER_SRV/A_SalesOrderItem`,
+            headers: {
+                'x-csrf-token': s4csrftoken,
+                authorization: s4destauthtoken,
+                'content-type': 'application/json',
+                'Cookie': s4cookies.join('; ')
+            },
+            data: itemPayload
+        };
+
+        try {
+            const { data } = await axios.request(options);
+            console.log("S/4 Sales Order Item Response:", data);
+            return data.d;
+        } catch (error) {
+            console.error("S/4 Sales Order Item Creation Failed:", error.response ? error.response.data : error.message);
+            throw new Error('S/4 Sales Order Item Creation Failed');
+        }
+    });
+
+    this.on('addSalesOrderPricingElement', async req => {
+        await getS4CsrfToken();
+
+        const payloadPricing = req.data.message;
+        console.log("Received payload for S4 Sales Order Pricing Element: ", payloadPricing);
+
+        const pricingPayload = {
+            "ConditionType": "DRV1",
+            "ConditionRateValue": String(payloadPricing.ConditionRateValue), // Remaining 90%
+            "PricingProcedureStep": "230",
+            "PricingProcedureCounter": "2" // Counter 2 to differentiate from the deposit (Counter 1)
+        };
+
+        const options = {
+            method: 'POST',
+            // Deep insert URL: /A_SalesOrder('ID')/to_PricingElement
+            url: `${s4desturl}/sap/opu/odata/sap/API_SALES_ORDER_SRV/A_SalesOrder('${payloadPricing.SalesOrderID}')/to_PricingElement`,
+            headers: {
+                'x-csrf-token': s4csrftoken,
+                authorization: s4destauthtoken,
+                'content-type': 'application/json',
+                'Cookie': s4cookies.join('; ')
+            },
+            data: pricingPayload
+        };
+
+        try {
+            const { data } = await axios.request(options);
+            console.log("S/4 Sales Order Pricing Element Response:", data);
+            return data.d;
+        } catch (error) {
+            console.error("S/4 Sales Order Pricing Element Creation Failed:", error.response ? error.response.data : error.message);
+            throw new Error('S/4 Sales Order Pricing Element Creation Failed');
+        }
+    });
+
 });
 
 async function getS4CsrfToken() {

@@ -1,70 +1,182 @@
-const express = require('express');
-const nodemailer = require('nodemailer');
-const path = require('path');
+// Load environment variables from the .env file
+require('dotenv').config();
+const axios = require('axios');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// --- Load Configuration from .env ---
+const {
+    SYNC_INTERVAL_SECONDS,
+    SUBMITTED_DOCS_API_HOST,
+    XSUAA_AUTH_ENDPOINT,
+    XSUAA_AUTH_CID,
+    XSUAA_AUTH_CSECRET,
+    DOC_AI_API_HOST,
+    DOCAI_EMB_TOKEN_URL,
+    DOCAI_EMB_TOKEN_USER,
+    DOCAI_EMB_TOKEN_PASSWORD
+} = process.env;
 
-// Middleware to parse form data
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+const SYNC_INTERVAL = SYNC_INTERVAL_SECONDS * 1000;
 
-// Serve the static HTML file
-app.use(express.static(path.join(__dirname)));
+/**
+ * Fetches the access token for the Submitted Documents API (XSUAA).
+ * @returns {Promise<string>} The access token.
+ */
+async function getSubmittedDocsAccessToken() {
+    try {
+        const url = `${XSUAA_AUTH_ENDPOINT}/oauth/token`;
+        const body = new URLSearchParams({
+            client_id: XSUAA_AUTH_CID,
+            client_secret: XSUAA_AUTH_CSECRET,
+            grant_type: 'client_credentials'
+        });
 
-// Configure Nodemailer transporter
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'saplpedemo@gmail.com',
-        pass: 'keabosyzpcfsweiz'
-    }
-});
-
-// Handle POST request to send an email
-app.post('/send-email', (req, res) => {
-    const { name, email, subject, message } = req.body;
-
-    // Email body with a beautiful header and customized content
-    const emailHtml = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-            <div style="width: 100%; text-align: center; background-color: #f0f0f0;">
-                <img src="https://placehold.co/600x200/5E548E/fff?text=Vertigo+Travels" alt="Vertigo Travels Header" style="width: 100%; height: auto; display: block; border-bottom: 3px solid #E0B19A;">
-            </div>
-            <div style="padding: 20px;">
-                <h2 style="color: #5E548E; margin-bottom: 20px; text-align: center;">Welcome to the Vertigo Travels Family!</h2>
-                <p>Hello ${name},</p>
-                <p>Thank you for subscribing to our course! We're thrilled to have you on board as you begin your journey with Vertigo Travels. We are committed to helping you discover the world's most breathtaking destinations.</p>
-                <p>We've received your request and have already begun processing it. We'll be in touch with you shortly with more details.</p>
-                
-                <p>Dear Admin,</p>
-                <p>Please find the pending document for your approval <a href="${message}" style="color: #E0B19A; text-decoration: none; font-weight: bold;">here</a>.</p>
-            </div>
-            <div style="text-align: center; padding: 20px; font-size: 12px; color: #888; border-top: 1px solid #eee;">
-                &copy; 2025 Vertigo Travels. All rights reserved.
-            </div>
-        </div>
-    `;
-
-    const mailOptions = {
-        from: `"${name}" <${email}>`,
-        to: `${email}`,
-        subject: `New Contact Form Submission: ${subject}`,
-        html: emailHtml
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error('Error sending email:', error);
-            return res.status(500).send('Something went wrong. Please try again later.');
+        const response = await axios.post(url, body);
+        console.log("Successfully fetched access token for Submitted Docs API.");
+        return response.data.access_token;
+    } catch (error) {
+        console.error("❌ Failed to get access token for Submitted Docs API:");
+        if (error.response) {
+            console.error("   - Status:", error.response.status);
+            console.error("   - Data:", error.response.data);
         } else {
-            console.log('Email sent:', info.response);
-            res.status(200).send('Email sent successfully!');
+            console.error("   - Error:", error.message);
         }
-    });
-});
+        throw new Error("Could not authenticate with Submitted Docs API.");
+    }
+}
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+/**
+ * Fetches the access token for the Document AI API.
+ * @returns {Promise<string>} The access token.
+ */
+async function getDocAiAccessToken() {
+    try {
+        // Create Basic Authentication credentials
+        const credentials = Buffer.from(`${DOCAI_EMB_TOKEN_USER}:${DOCAI_EMB_TOKEN_PASSWORD}`).toString('base64');
+
+        const response = await axios.post(DOCAI_EMB_TOKEN_URL, null, { // No body needed for this grant type
+            headers: {
+                'Authorization': `Basic ${credentials}`
+            }
+        });
+
+        console.log("Successfully fetched access token for Document AI API.");
+        return response.data.access_token;
+    } catch (error) {
+        console.error("❌ Failed to get access token for Document AI API:");
+        if (error.response) {
+            console.error("   - Status:", error.response.status);
+            console.error("   - Data:", error.response.data);
+        } else {
+            console.error("   - Error:", error.message);
+        }
+        throw new Error("Could not authenticate with Document AI API.");
+    }
+}
+
+
+/**
+ * The main function to sync document statuses.
+ */
+async function syncDocumentStatuses() {
+    console.log(`[${new Date().toISOString()}] Starting document status sync...`);
+
+    try {
+        // --- Step 1: Authenticate and get tokens for both services ---
+        const submittedDocsToken = await getSubmittedDocsAccessToken();
+        const docAiToken = await getDocAiAccessToken();
+
+        // --- Step 2: Fetch documents from your SubmittedDocuments service ---
+        const submittedDocsResponse = await axios.get(`${SUBMITTED_DOCS_API_HOST}/admin/SubmittedDocuments`, {
+            headers: { 'Authorization': `Bearer ${submittedDocsToken}` }
+        });
+        const submittedDocs = submittedDocsResponse.data.value;
+
+        if (!submittedDocs || submittedDocs.length === 0) {
+            console.log("No submitted documents found. Waiting for the next run.");
+            return;
+        }
+        console.log(`Found ${submittedDocs.length} submitted document(s) to check.`);
+
+        // --- Step 3: Fetch documents from Document AI ---
+        const docAiResponse = await axios.get(`${DOC_AI_API_HOST}/document-ai/v1/DocumentService/Documents`, {
+            headers: { 'Authorization': `Bearer ${docAiToken}` }
+        });
+        const docAiDocs = docAiResponse.data.value;
+
+        // Create a Map for efficient lookups (O(1) average time complexity)
+        const docAiMap = new Map(docAiDocs.map(doc => [doc.file_ID, doc]));
+        console.log(`Found ${docAiMap.size} document(s) in Document AI.`);
+
+        // --- Step 4: Compare and patch statuses ---
+        for (const submittedDoc of submittedDocs) {
+            const docAiDoc = docAiMap.get(submittedDoc.documentID);
+
+            if (!docAiDoc) {
+                console.log(`- Skipping: Document with ID ${submittedDoc.documentID} not found in Doc AI.`);
+                continue;
+            }
+
+            const docAiStatus = docAiDoc.status;
+            const statusesToSync = ['confirmed', 'rejected'];
+
+            if (statusesToSync.includes(docAiStatus.toLowerCase()) && submittedDoc.status !== docAiStatus) {
+                console.log(`- Updating status for document ${submittedDoc.ID} from '${submittedDoc.status}' to '${docAiStatus}'.`);
+
+                await axios.patch(`${SUBMITTED_DOCS_API_HOST}/admin/SubmittedDocuments/${submittedDoc.ID}`,
+                    { status: docAiStatus },
+                    { headers: { 'Authorization': `Bearer ${submittedDocsToken}` } }
+                );
+                console.log(`  ✅ Successfully updated status for document ${submittedDoc.ID}.`);
+            } else {
+                console.log(`- Skipping document ${submittedDoc.documentID}: Status is '${docAiStatus}' (already synced or not ready for sync).`);
+            }
+        }
+    } catch (error) {
+        // Errors from token fetching are already logged. This will catch other errors.
+        if (error.config) { // It's likely an axios error
+            console.error(`❌ An error occurred during an API call to ${error.config.url}`);
+        } else {
+            console.error("❌ An unexpected error occurred during the sync process:", error.message);
+        }
+    } finally {
+        console.log(`[${new Date().toISOString()}] Sync process finished. Next run in ${SYNC_INTERVAL_SECONDS} seconds.`);
+        console.log('---');
+    }
+}
+
+/**
+ * Validates that all required environment variables are set.
+ */
+function validateEnvVariables() {
+    const requiredVars = [
+        'SYNC_INTERVAL_SECONDS', 'SUBMITTED_DOCS_API_HOST', 'XSUAA_AUTH_ENDPOINT',
+        'XSUAA_AUTH_CID', 'XSUAA_AUTH_CSECRET', 'DOC_AI_API_HOST', 'DOCAI_EMB_TOKEN_URL',
+        'DOCAI_EMB_TOKEN_USER', 'DOCAI_EMB_TOKEN_PASSWORD'
+    ];
+    const missingVars = requiredVars.filter(v => !process.env[v]);
+    if (missingVars.length > 0) {
+        throw new Error(`❌ Critical Error: Missing required environment variables: ${missingVars.join(', ')}`);
+    }
+}
+
+/**
+ * Starts the application and sets the timer.
+ */
+function startService() {
+    try {
+        validateEnvVariables();
+        console.log("🚀 Document Sync Service is starting.");
+        console.log(`Sync interval set to ${SYNC_INTERVAL_SECONDS} seconds.`);
+        console.log('---');
+
+        syncDocumentStatuses(); // Run immediately on start
+        setInterval(syncDocumentStatuses, SYNC_INTERVAL); // Then run on the interval
+    } catch (error) {
+        console.error(error.message);
+        console.error("Service will not start. Please fix the configuration in your .env file.");
+    }
+}
+
+// Start the service
+startService();

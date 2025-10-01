@@ -39,6 +39,7 @@ const DOCAI_EMB_TOKEN_USER = process.env.DOCAI_EMB_TOKEN_USER;
 const DOCAI_EMB_TOKEN_PASSWORD = process.env.DOCAI_EMB_TOKEN_PASSWORD;
 
 // Hardcoded URLs moved to environment variables
+const aiServiceAPIUrl = process.env.DOCAI_EMB_API_URL;
 const aiServiceUrl = process.env.DOCAI_EMB_API_URL + '/FileService/Files/Upload';
 const aiServiceSchemasUrl = process.env.DOCAI_EMB_API_URL + '/SchemaService/Schemas?$expand=versions';
 const aiServiceFileResponseUrl = process.env.DOCAI_EMB_API_URL + '/Files';
@@ -83,7 +84,7 @@ app.get('/documents/reviewNeeded', async (req, res) => {
         const aiServiceToken = await getBearerToken(); // Assuming getBearerToken() is a function you have defined
 
         // Construct the URL using the documentId from the request parameters
-        const ocrUrl = `https://aiservices-dox.cfapps.eu10.hana.ondemand.com/document-ai/v1/FileService/Documents?$filter=status eq 'reviewNeeded'`;
+        const ocrUrl = aiServiceAPIUrl + `/FileService/Documents?$filter=status eq 'reviewNeeded'`;
 
         const response = await fetch(ocrUrl, {
             method: 'GET',
@@ -120,7 +121,7 @@ app.get('/document-ocr/:documentId', async (req, res) => {
         const aiServiceToken = await getBearerToken(); // Assuming getBearerToken() is a function you have defined
 
         // Construct the URL using the documentId from the request parameters
-        const ocrUrl = `https://aiservices-dox.cfapps.eu10.hana.ondemand.com/document-ai/v1/FileService/Files/${documentId}/ocrResponse`;
+        const ocrUrl = aiServiceAPIUrl + `/FileService/Files/${documentId}/ocrResponse`;
 
         const response = await fetch(ocrUrl, {
             method: 'GET',
@@ -158,7 +159,7 @@ app.get('/document-text/:documentId', async (req, res) => {
         const aiServiceToken = await getBearerToken(); // Assuming getBearerToken() is a function you have defined
 
         // Construct the URL using the documentId from the request parameters
-        const textUrl = `https://aiservices-dox.cfapps.eu10.hana.ondemand.com/document-ai/v1/FileService/Files/${documentId}/text`;
+        const textUrl = aiServiceAPIUrl + `/FileService/Files/${documentId}/text`;
 
         const response = await fetch(textUrl, {
             method: 'GET',
@@ -213,22 +214,19 @@ app.patch('/admin/SubmittedDocuments/:documentID', async (req, res) => {
 
 // Handle POST request to send an email
 app.post('/send-email', (req, res) => {
-    const { name, email, subject, message } = req.body;
+    const { name, email, subject, message, navurl } = req.body;
 
     // Email body with a beautiful header and customized content
     const emailHtml = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
             <div style="width: 100%; text-align: center; background-color: #f0f0f0;">
-                <img src="https://placehold.co/600x200/1a3c5a/fff?text=Vertigo+Travels" alt="Vertigo Travels Header" style="width: 100%; height: auto; display: block; border-bottom: 3px solid #E0B19A;">
+                <img src="https://placehold.co/600x200/1a3c5a/fff?text=Vertigo+Travels" alt="Vertigo Travels Header" style="width: 100%; height: auto; display: block; border-bottom: 3px solid #90dfefff;">
             </div>
             <div style="padding: 20px;">
                 <h2 style="color: #1a3c5a; margin-bottom: 20px; text-align: center;">Welcome to the Vertigo Travels Family!</h2>
-                <p>Hello ${name},</p>
-                <p>Thank you for subscribing to our course! We're thrilled to have you on board as you begin your journey with Vertigo Travels. We are committed to helping you discover the world's most breathtaking destinations.</p>
-                <p>We've received your request and have already begun processing it. We'll be in touch with you shortly with more details.</p>
-                
-                <p>Dear Admin,</p>
-                <p>Please find the pending document for your approval <a href="${message}" style="color: #E0B19A; text-decoration: none; font-weight: bold;">here</a>.</p>
+                <p>Dear ${name},</p>
+                <p>${message} </p>
+                <p>More details <a href="${navurl}" style="color: #E0B19A; text-decoration: none; font-weight: bold;">here</a>.</p>
             </div>
             <div style="text-align: center; padding: 20px; font-size: 12px; color: #888; border-top: 1px solid #eee;">
                 &copy; 2025 Vertigo Travels. All rights reserved.
@@ -239,7 +237,7 @@ app.post('/send-email', (req, res) => {
     const mailOptions = {
         from: `"${name}" <${email}>`,
         to: `${email}`,
-        subject: `New Contact Form Submission: ${subject}`,
+        subject: `${subject}`,
         html: emailHtml
     };
 
@@ -297,6 +295,7 @@ app.get('/schemas', async (req, res) => {
 
     try {
         const aiServiceToken = await getBearerToken();
+        console.log('Bearer Token:', aiServiceToken); // Debugging line to check the token value
 
         const response = await fetch(aiServiceSchemasUrl, {
             method: 'GET',

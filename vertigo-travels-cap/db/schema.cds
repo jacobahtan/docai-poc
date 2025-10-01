@@ -16,6 +16,7 @@ entity Courses : cuid, managed {
     depositAmount       : Decimal(10, 2);
     requiredDocuments   : Composition of many RequiredDocuments on requiredDocuments.course = $self;
     image         : LargeString;
+    s4hanaProductID   : String(10); // ID from S/4HANA Product
 }
 
 /**
@@ -40,6 +41,7 @@ entity Travelers : cuid, managed {
     dateOfBirth         : Date;
     isKid               : Boolean default false;
     parent              : Association to Travelers; // Self-association for dependents
+    businessPartnerID  : String(10); // ID from S/4HANA Business Partner
     subscriptions       : Association to many Subscriptions on subscriptions.traveler = $self;
 }
 

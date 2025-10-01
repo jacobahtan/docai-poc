@@ -1,14 +1,11 @@
 ---
 applications:
-  - name: vertigo-travels-doc-sync
+  - name: vertigo-travels-ui-node-mock
     path: .
     buildpacks:
       - nodejs_buildpack
     memory: 256M
-    disk_quota: 512M
-    command: node app.js
-    health-check-type: process # This is the crucial fix
-    health-check-timeout: 180  # Increase timeout to give the app ample time to start
+    disk_quota: 256M
     env:
       DOCAI_ENDPOINT : https://docaiwebinar.cfapps.eu12.hana.ondemand.com
       BACKEND_CDS_ENDPOINT : https://sadevmain-dev-vertigo-travels-cap-srv.cfapps.eu10.hana.ondemand.com
@@ -20,6 +17,3 @@ applications:
       DOCAI_EMB_TOKEN_USER : sb-961ca752-bf56-4fc9-bc2a-2ef483259bb4!b378765|na-f20548c0-157d-417b-8bbb-1c9f35ecfb2d!b20821
       DOCAI_EMB_TOKEN_PASSWORD : f540894d-8f04-4e88-9858-feba4095e12c$c7YgUs7r_YO8f9NvozbDObqwxl7X9KIYIeN15SKiUaI=
       DOCAI_EMB_API_URL : https://aiservices-dox.cfapps.eu10.hana.ondemand.com/document-ai/v1
-      SYNC_INTERVAL_SECONDS : 10
-      SUBMITTED_DOCS_API_HOST : https://sadevmain-dev-vertigo-travels-cap-srv.cfapps.eu10.hana.ondemand.com
-      DOC_AI_API_HOST : https://aiservices-dox.cfapps.eu10.hana.ondemand.com

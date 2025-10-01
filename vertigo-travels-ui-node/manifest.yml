@@ -1,19 +1,21 @@
 ---
 applications:
-  - name: vertigo-travels-ui-node-mock
+  - name: vertigo-travels-ui-node-canary
     path: .
     buildpacks:
       - nodejs_buildpack
     memory: 256M
     disk_quota: 256M
     env:
-      DOCAI_ENDPOINT : https://docaiwebinar.cfapps.eu12.hana.ondemand.com
+      DOCAI_ENDPOINT : https://docaiembed-w3r5o2rp.eu10-canary.doc.cloud.sap
       BACKEND_CDS_ENDPOINT : https://sadevmain-dev-vertigo-travels-cap-srv.cfapps.eu10.hana.ondemand.com
       XSUAA_AUTH_ENDPOINT : https://sadevmain.authentication.eu10.hana.ondemand.com
-      XSUAA_AUTH_CSECRET : 342a0798-6f4f-41e2-b0fa-6d82443c5ff8$6_J1qy6yLItutxXD-mQAHq9kzR_Yu_oP2HIjzIq5G5s=
+      XSUAA_AUTH_CSECRET : 64762137-db42-4852-8fef-63c50e8d84d0$DXxQ37hZInmUg9jzst7OfLCe_7qSAR4lqS2gXl5rn78=
       XSUAA_AUTH_CID : sb-vertigo-travels-cap-sadevmain-dev!t141280
       S4HANA_ENDPOINT : https://my301481.s4hana.ondemand.com
-      DOCAI_EMB_TOKEN_URL : https://sa-gen-ai-enablement-ou0xihwt.authentication.eu10.hana.ondemand.com/oauth/token?grant_type=client_credentials
-      DOCAI_EMB_TOKEN_USER : sb-961ca752-bf56-4fc9-bc2a-2ef483259bb4!b378765|na-f20548c0-157d-417b-8bbb-1c9f35ecfb2d!b20821
-      DOCAI_EMB_TOKEN_PASSWORD : f540894d-8f04-4e88-9858-feba4095e12c$c7YgUs7r_YO8f9NvozbDObqwxl7X9KIYIeN15SKiUaI=
-      DOCAI_EMB_API_URL : https://aiservices-dox.cfapps.eu10.hana.ondemand.com/document-ai/v1
+      DOCAI_EMB_TOKEN_URL : https://docaiembed-w3r5o2rp.authentication.sap.hana.ondemand.com/oauth/token?grant_type=client_credentials
+      DOCAI_EMB_TOKEN_USER : sb-3eb7532d-cb41-43a8-9ab1-7e4b47c0d3da!b242056|dox-xsuaa-std-internal-production!b14483
+      DOCAI_EMB_TOKEN_PASSWORD : eb025e5d-a57a-4f9c-beeb-9de38f76a19a$h71ZowdhHI9AE8jiWSbH2avFpRomIRYw0F3v5nPRKZg=
+      DOCAI_EMB_API_URL : https://aiservices-dox.cfapps.sap.hana.ondemand.com/document-ai/v1
+      MAILER_USER : saplpedemo@gmail.com
+      MAILER_PASSWORD : keabosyzpcfsweiz

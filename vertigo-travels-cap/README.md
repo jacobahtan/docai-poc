@@ -96,3 +96,8 @@ paste into hardcoded UI first as of this stage
 cf set-env vertigo-travels-ui-node-mock XSUAA_AUTH_CSECRET 342a0798-6f4f-41e2-b0fa-6d82443c5ff8$6_J1qy6yLItutxXD-mQAHq9kzR_Yu_oP2HIjzIq5G5s=
 cmd above will remove $6.. for some reasons..
 .env file change secret
+
+trying to redeploy fresh hana db state for portover to canary
+cf mtas
+cf undeploy vertigo-travels-cap --delete-services --delete-service-keys
+

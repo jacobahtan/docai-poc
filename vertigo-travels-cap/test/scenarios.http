@@ -2,7 +2,7 @@
 @host = https://sadevmain-dev-vertigo-travels-cap-srv.cfapps.eu10.hana.ondemand.com
 @xsuaaHostname = https://sadevmain.authentication.eu10.hana.ondemand.com
 @btpXsuaaClient = sb-vertigo-travels-cap-sadevmain-dev!t141280
-@btpXsuaaSecret = 342a0798-6f4f-41e2-b0fa-6d82443c5ff8$6_J1qy6yLItutxXD-mQAHq9kzR_Yu_oP2HIjzIq5G5s=
+@btpXsuaaSecret = 64762137-db42-4852-8fef-63c50e8d84d0$DXxQ37hZInmUg9jzst7OfLCe_7qSAR4lqS2gXl5rn78=
 
 ### GET XSUAA TOKEN
 # @name getXsuaaToken
@@ -37,6 +37,32 @@ GET {{host}}/admin/SubmittedDocuments
 Authorization: Bearer {{token}}
 ###
 
+
+###
+PATCH {{host}}/admin/SubmittedDocuments/b2b08442-2d87-499c-9b30-6402cc7f671e
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "status": "Uploaded"
+}
+
+###
+PATCH {{host}}/admin/Subscriptions/7a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "status": "DepositPending"
+}
+
+
+###
+
+GET {{host}}/admin/Travelers
+Authorization: Bearer {{token}}
+###
+
 GET {{host}}/admin/Courses
 Authorization: Bearer {{token}}
 ###
@@ -50,7 +76,7 @@ Authorization: Bearer {{token}}
 
 ###
 
-GET {{host}}/admin/Subscriptions
+GET {{host}}/admin/Subscriptions(7a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d)
 Authorization: Bearer {{token}}
 
 ###
@@ -211,4 +237,58 @@ Content-Type: application/json
         "lastName": "Jane",
         "email": "mary@travels.com"
    }
+}
+
+### createNewSalesOrder: create a new S4 Sales Order
+POST {{host}}/s4-api/createNewSalesOrder
+Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+{
+   "message":{
+        "BusinessPartnerID": "1000937",
+        "DepositAmount": "99"
+   }
+}
+
+### addSalesOrderItem
+POST {{host}}/s4-api/addSalesOrderItem
+Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+{
+   "message":{
+        "SalesOrderID": "17343",
+        "MaterialID": "173"
+   }
+}
+
+### addSalesOrderPricingElement
+POST {{host}}/s4-api/addSalesOrderPricingElement
+Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+{
+   "message":{
+        "SalesOrderID": "17343",
+        "ConditionRateValue": "99"
+   }
+}
+
+###
+PATCH {{host}}/admin/RequiredDocuments/7b9c2a1d-8e6b-4c3a-9a2d-1e5f8c4b3a1d
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "documentTypeSchemaID": "9e42e119-bb70-4904-9bfc-afb204cdd8f9"
+}
+
+###
+PATCH {{host}}/admin/RequiredDocuments/8c1d3e2a-9f7c-5b4d-9c3e-2f6a9d5b4c2a
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "documentTypeSchemaID": "73058d39-77de-4064-8bbe-11013835f7a4"
 }
